@@ -1,0 +1,142 @@
+# =============================================================================
+# PEGA KYC Analysis Configuration
+# =============================================================================
+#
+# Edit this file to point the engine at your PEGA export folders.
+# Then run:
+#   python tools/run.py analyse --config config/analysis_config.yaml
+#
+# Hierarchy order (most specific → least specific):
+#   COB  →  CRDFWApp  →  MSFWApp  →  PegaRules
+#
+# "Most specific wins": if the same rule name exists in multiple apps,
+# the one from the lowest-tier app (COB = tier 0) is used for analysis.
+# Higher-tier rules are kept as context only.
+# =============================================================================
+
+
+# ─── Application hierarchy ────────────────────────────────────────────────────
+#
+# Each entry defines one application folder.
+# Fields:
+#   name              : application name (used in logs and outputs)
+#   tier              : 0 = most specific (COB), 3 = least specific (PegaRules)
+#   folder            : path to the folder containing .bin files + manifest .json files
+#                       (relative to this config file, or absolute)
+#   manifest_version  : which manifest JSON to use
+#                       "latest"   → auto-select the highest-versioned manifest in the folder
+#                       "01-02-03" → exact rulesetVersion string to match
+#   include_in_analysis:
+#                       true  → rules from this app are queued for LLM analysis
+#                       false → rules are loaded into graph as context only (no LLM calls)
+#
+# hierarchy:
+#   - name: COB           ← REQUIRED: client-specific overrides (most specific)
+#   - name: CRDFWApp      ← REQUIRED: framework application
+#   - name: MSFWApp       ← REQUIRED: shared framework
+#   - name: PegaRules     ← REQUIRED: base PEGA rules (least specific)
+
+hierarchy:
+
+  - name: COB
+    tier: 0
+    folder: ./pega-export/COB
+    manifest_version: latest
+    include_in_analysis: true
+
+  - name: CRDFWApp
+    tier: 1
+    folder: ./pega-export/CRDFWApp
+    manifest_version: latest
+    include_in_analysis: true
+
+  - name: MSFWApp
+    tier: 2
+    folder: ./pega-export/MSFWApp
+    manifest_version: latest
+    include_in_analysis: false
+
+  - name: PegaRules
+    tier: 3
+    folder: ./pega-export/PegaRules
+    manifest_version: latest
+    include_in_analysis: false
+
+
+# ─── Analysis settings ────────────────────────────────────────────────────────
+
+analysis:
+
+  # The pyRuleName value of the root Rule-Obj-CaseType to start analysis from.
+  # Find this by opening any manifest JSON and looking at the pxResults entries.
+  # Examples: KYC-Work-CDD, KYC-Work-EDD, KYCOnboarding
+  root_casetype: KYC-Work-CDD
+
+  # Output audience — controls language depth and technical detail
+  #   ba  → Business Analyst  (plain English, PEGA terms explained)
+  #   po  → Product Owner     (business value, concise, MoSCoW)
+  #   dev → PEGA Developer    (full technical depth, JSON field references)
+  #   qa  → QA Engineer       (testable conditions, edge cases, Gherkin-friendly)
+  role: ba
+
+  # Anthropic model to use for LLM calls
+  model: claude-sonnet-4-20250514
+
+  # Maximum rules to analyse per session.
+  # Re-run the same command to continue from the checkpoint.
+  max_rules_per_session: 50
+
+  # Input token budget per LLM call (context assembly is capped to this).
+  # Increase to 8000 for flows with many dependencies.
+  # Default 6000 is the best balance of quality and cost.
+  token_budget_per_rule: 6000
+
+
+# ─── Workspace ────────────────────────────────────────────────────────────────
+
+# Where checkpoint state and all outputs are saved.
+# Each run with the same workspace resumes from where it left off.
+# Use different workspaces for different CaseType analyses.
+workspace: ./workspaces/kyc-cdd-analysis
+
+
+# ─── Rule type filter ─────────────────────────────────────────────────────────
+#
+# Control which rule types are loaded from the manifests.
+# Setting a type to false excludes it from the graph entirely.
+# (When conditions are terminal nodes — safe to exclude to reduce LLM calls.)
+
+rule_type_filter:
+  Rule-Obj-CaseType:    true
+  Rule-Obj-Flow:        true
+  Rule-Obj-Activity:    true
+  Rule-Obj-Flowsection: true
+  Rule-HTML-Section:    true
+  Rule-Obj-When:        true
+  Rule-Obj-DataTransform: false
+  Rule-Obj-Decision:    false
+
+
+# ─── BIN extraction settings ─────────────────────────────────────────────────
+
+bin_extraction:
+  # Whether to attempt string extraction from .bin files to find cross-rule references.
+  # Disable if BIN extraction is too slow on large codebases.
+  enabled: true
+
+  # Minimum string length to extract from a BIN file (characters).
+  # Lower = more noise; higher = may miss short rule names.
+  min_string_length: 4
+
+  # Patterns to recognise as rule name references inside BIN strings.
+  # These are searched in the extracted strings to identify cross-rule links.
+  reference_patterns:
+    - "pyFlowActionName"
+    - "pyActivityName"
+    - "pySubFlowName"
+    - "pyConnectorName"
+    - "pyDataTransformName"
+    - "pySLAName"
+    - "pyWhenName"
+    - "pyDecisionName"
+    - "pyRouterName"

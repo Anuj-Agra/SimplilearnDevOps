@@ -34,13 +34,17 @@ class RuleNode:
     rule_name:  str
     rule_class: str
     rule_type:  str
-    file_path:  Optional[Path] = None      # Path to raw JSON/BIN file
-    parsed:     Optional[dict] = None      # Loaded and parsed rule dict
+    file_path:  Optional[Path] = None      # Path to .bin file (hierarchy mode) or .json file (dir mode)
+    parsed:     Optional[dict] = None      # Loaded and parsed rule dict (or pseudo-JSON from BIN)
     status:     str = "pending"            # pending | in_progress | done | failed | skipped
     references: list[RuleRef] = field(default_factory=list)   # outbound refs
     referenced_by: list[str] = field(default_factory=list)    # inbound refs (rule_names)
     priority:   int = 5
     depth:      int = 0                    # depth from root CaseType node
+    # ── Hierarchy fields (populated in hierarchy mode) ────────────────────────
+    app_name:   str = ""                   # COB | CRDFWApp | MSFWApp | PegaRules
+    tier:       int = 0                    # 0=COB (most specific) … 3=PegaRules
+    include_in_analysis: bool = True       # False = context only, no LLM call
 
     @property
     def node_id(self) -> str:
@@ -48,22 +52,25 @@ class RuleNode:
 
     def to_dict(self) -> dict:
         return {
-            "rule_name":     self.rule_name,
-            "rule_class":    self.rule_class,
-            "rule_type":     self.rule_type,
-            "file_path":     str(self.file_path) if self.file_path else None,
-            "status":        self.status,
-            "priority":      self.priority,
-            "depth":         self.depth,
-            "referenced_by": self.referenced_by,
-            "references":    [
+            "rule_name":           self.rule_name,
+            "rule_class":          self.rule_class,
+            "rule_type":           self.rule_type,
+            "file_path":           str(self.file_path) if self.file_path else None,
+            "status":              self.status,
+            "priority":            self.priority,
+            "depth":               self.depth,
+            "app_name":            self.app_name,
+            "tier":                self.tier,
+            "include_in_analysis": self.include_in_analysis,
+            "referenced_by":       self.referenced_by,
+            "references":          [
                 {
-                    "rule_name":  r.rule_name,
-                    "rule_class": r.rule_class,
-                    "rule_type":  r.rule_type,
+                    "rule_name":    r.rule_name,
+                    "rule_class":   r.rule_class,
+                    "rule_type":    r.rule_type,
                     "source_field": r.source_field,
-                    "is_async":   r.is_async,
-                    "priority":   r.priority,
+                    "is_async":     r.is_async,
+                    "priority":     r.priority,
                 }
                 for r in self.references
             ],
@@ -180,6 +187,89 @@ class RuleGraph:
 
         return graph
 
+    # ── Hierarchy-aware loader (COB / CRDFWApp / MSFWApp / PegaRules) ──────
+
+    @classmethod
+    def from_hierarchy_config(cls, config) -> "RuleGraph":
+        """
+        Build the rule graph from an AnalysisConfig (config_loader.AnalysisConfig).
+
+        Loads all 4 application tiers via HierarchyLoader, applies
+        most-specific-wins inheritance, enriches with BIN content,
+        then builds the dependency graph exactly as from_directory() does.
+        """
+        # Use absolute import so this works both as package and standalone
+        import sys as _sys
+        import os as _os
+        _tools_dir = str(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+        if _tools_dir not in _sys.path:
+            _sys.path.insert(0, _tools_dir)
+        from parser.hierarchy_loader import HierarchyLoader
+
+        loader = HierarchyLoader(
+            apps_config           = config.hierarchy,
+            rule_type_filter      = config.rule_type_filter,
+            bin_extraction_config = config.bin_extraction,
+        )
+        loaded_rules = loader.load()
+
+        if not loaded_rules:
+            logger.error("No rules loaded from hierarchy — check folder paths and manifests.")
+            return cls()
+
+        graph = cls()
+
+        # First pass: add all rules as nodes
+        for lr in loaded_rules:
+            pseudo_json = lr.to_pseudo_json()
+            node = RuleNode(
+                rule_name           = lr.rule_name,
+                rule_class          = lr.rule_class,
+                rule_type           = lr.rule_type,
+                file_path           = lr.bin_file,
+                parsed              = pseudo_json,
+                priority            = _priority_for_type(lr.rule_type),
+                app_name            = lr.app_name,
+                tier                = lr.tier,
+                include_in_analysis = lr.include_in_analysis,
+            )
+            graph.add_node(node)
+
+        logger.info("Graph: %d nodes added from hierarchy", len(graph._nodes))
+
+        # Second pass: extract references and build edges
+        ref_count = 0
+        for node in list(graph._nodes.values()):
+            if node.parsed:
+                try:
+                    refs = extract_references(node.parsed)
+                    node.references = refs
+                    for ref in refs:
+                        graph.add_edge(ref)
+                    ref_count += len(refs)
+                except Exception as e:
+                    logger.warning("Ref extraction failed for %s: %s", node.node_id, e)
+
+        logger.info("Graph: %d cross-rule references extracted", ref_count)
+
+        # Set root CaseType
+        root_casetype = config.root_casetype
+        if root_casetype:
+            for nid, node in graph._nodes.items():
+                if node.rule_name == root_casetype and node.rule_type == "Rule-Obj-CaseType":
+                    graph._root_id = nid
+                    node.depth = 0
+                    logger.info("Root set to: %s (from app: %s)", nid, node.app_name)
+                    break
+            if not graph._root_id:
+                logger.warning(
+                    "Root CaseType '%s' not found. Check root_casetype in config.",
+                    root_casetype
+                )
+            graph._assign_depths()
+
+        return graph
+
     def _assign_depths(self):
         """BFS from root to assign depth values."""
         if not self._root_id or self._root_id not in self._nodes:
@@ -203,11 +293,12 @@ class RuleGraph:
     def analysis_queue(self, include_async: bool = True) -> list[RuleNode]:
         """
         Return nodes in BFS order from root, sorted by (depth, priority).
-        Excludes nodes without file_path (referenced but not found on disk).
+        Excludes context-only nodes (include_in_analysis=False) from LLM queue.
+        Nodes without parsed content (unresolved references) are also excluded.
         """
         if not self._root_id:
-            # No root: return all nodes sorted by priority
-            nodes = [n for n in self._nodes.values() if n.file_path]
+            nodes = [n for n in self._nodes.values()
+                     if n.parsed and n.include_in_analysis]
             return sorted(nodes, key=lambda n: (n.priority, n.rule_name))
 
         visited:   set[str]   = set()
@@ -224,7 +315,8 @@ class RuleGraph:
             if not node:
                 continue
 
-            if node.file_path:   # only include rules we have files for
+            # Include if we have content AND the rule is queued for analysis
+            if node.parsed and node.include_in_analysis:
                 result.append(node)
 
             # Enqueue children sorted by (priority, async)

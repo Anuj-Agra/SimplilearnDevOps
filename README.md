@@ -127,22 +127,50 @@ pega-kyc-agent-hub/                        ← Root
 
 ## Quickstart
 
-### Option A — Use the interactive app (recommended for teams)
+### Option A — Reverse-engineer a real PEGA export (4-folder BIN hierarchy)
+
+For teams with a PEGA export organised as `COB / CRDFWApp / MSFWApp / PegaRules` folders
+containing `.bin` rule files and manifest `.json` files:
+
+```bash
+# 1. Install dependencies
+pip install -r tools/requirements.txt
+
+# 2. Set your Anthropic API key
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# 3. Edit config/analysis_config.yaml with your folder paths and manifest versions
+
+# 4. Validate paths before any analysis
+python tools/run.py validate-config --config config/analysis_config.yaml
+
+# 5. Build rule graph (free — no LLM)
+python tools/run.py graph --config config/analysis_config.yaml
+
+# 6. Run analysis (resume-safe — re-run any time after interruption)
+python tools/run.py analyse --config config/analysis_config.yaml
+
+# 7. Aggregate outputs
+python tools/run.py aggregate --config config/analysis_config.yaml
+```
+
+See `docs/hierarchy-config-guide.md` for the full setup walkthrough.
+
+### Option B — Use the interactive Claude.ai app (no setup required)
 1. Open `app/pega-kyc-agent-hub.jsx` in [Claude.ai Artifacts](https://claude.ai)
 2. Select your agent and role
 3. Paste PEGA JSON, BIN content, or a description
 4. Generate your deliverable
 
-### Option B — Copy a prompt template (paste into Claude.ai)
+### Option C — Copy a prompt template (paste into Claude.ai)
 1. Open `agents/<agent-name>/system-prompt.md`
-2. Copy the full contents
-3. In Claude.ai, start a new conversation and paste as a **System Prompt** (Projects feature) or prepend to your message
-4. Include the relevant skill files from `skills/` for richer context
+2. Copy the full contents and paste as a System Prompt in a Claude.ai Project
+3. Include the relevant skill files from `skills/` for richer context
 
-### Option C — API integration
+### Option D — API integration (legacy flat JSON export)
 1. Read `docs/getting-started.md`
 2. Use `agents/<agent-name>/config.json` for model and parameter settings
-3. Inject skill files from `skills/` as additional context in the system prompt
+3. Run: `python tools/run.py analyse --rules-dir ./my-export --workspace ./ws --root-casetype KYC-Work-CDD`
 
 ---
 

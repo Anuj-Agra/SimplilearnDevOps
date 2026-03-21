@@ -122,12 +122,19 @@ class RecursiveAnalyser:
     """
     Drives the complete recursive analysis of a PEGA KYC rule graph.
     Safe to interrupt and resume — state is checkpointed after every rule.
+
+    Two construction modes:
+      Legacy mode  (--rules-dir):  rules_dir points to flat directory of JSON files.
+      Hierarchy mode (--config):   analysis_config is an AnalysisConfig from
+                                   config_loader.load_config() — handles COB/CRDFWApp/
+                                   MSFWApp/PegaRules folders, manifest selection, and
+                                   BIN file extraction automatically.
     """
 
     def __init__(
         self,
-        workspace: Path,
-        rules_dir: Path,
+        workspace: Path = None,
+        rules_dir: Path = None,
         root_casetype: Optional[str] = None,
         model: str = "claude-sonnet-4-20250514",
         max_rules_per_session: int = 50,
@@ -135,13 +142,27 @@ class RecursiveAnalyser:
         skill_files: list[Path] = None,
         role_adapter_path: Optional[Path] = None,
         dry_run: bool = False,
+        analysis_config=None,   # AnalysisConfig from config_loader.load_config()
     ):
-        self.workspace             = Path(workspace)
-        self.rules_dir             = Path(rules_dir)
-        self.root_casetype         = root_casetype
-        self.model                 = model
-        self.max_rules_per_session = max_rules_per_session
-        self.dry_run               = dry_run
+        # ── Hierarchy mode — config object drives everything ──────────────────
+        if analysis_config is not None:
+            self._analysis_config      = analysis_config
+            self.workspace             = Path(analysis_config.workspace)
+            self.rules_dir             = None
+            self.root_casetype         = analysis_config.root_casetype
+            self.model                 = analysis_config.model
+            self.max_rules_per_session = analysis_config.max_rules_per_session
+            self.dry_run               = dry_run
+            token_budget_per_rule      = analysis_config.token_budget_per_rule
+        else:
+            # ── Legacy mode — flat rules_dir of JSON files ────────────────────
+            self._analysis_config      = None
+            self.workspace             = Path(workspace)
+            self.rules_dir             = Path(rules_dir) if rules_dir else None
+            self.root_casetype         = root_casetype
+            self.model                 = model
+            self.max_rules_per_session = max_rules_per_session
+            self.dry_run               = dry_run
 
         self.checkpoint = CheckpointManager(self.workspace)
         self.assembler  = ContextAssembler(
@@ -162,14 +183,24 @@ class RecursiveAnalyser:
         """
         Parse all rule files, build the dependency graph, initialise the checkpoint.
         Does NOT call the LLM. Safe to run multiple times (idempotent with overwrite=False).
+
+        In hierarchy mode: loads COB → CRDFWApp → MSFWApp → PegaRules using the
+        AnalysisConfig (manifest selection, BIN extraction, most-specific-wins).
+        In legacy mode: scans a flat directory of JSON rule files.
         """
         graph_path = self.workspace / "rule_graph.json"
 
         if graph_path.exists() and not overwrite:
             logger.info("Loading existing rule graph from %s", graph_path)
             self.graph = RuleGraph.load(graph_path)
+        elif self._analysis_config is not None:
+            # ── Hierarchy mode ────────────────────────────────────────────────
+            logger.info("Building rule graph from 4-tier hierarchy (COB/CRDFWApp/MSFWApp/PegaRules)")
+            self.graph = RuleGraph.from_hierarchy_config(self._analysis_config)
+            self.graph.save(graph_path)
         else:
-            logger.info("Building rule graph from %s", self.rules_dir)
+            # ── Legacy mode ───────────────────────────────────────────────────
+            logger.info("Building rule graph from directory: %s", self.rules_dir)
             self.graph = RuleGraph.from_directory(self.rules_dir, self.root_casetype)
             self.graph.save(graph_path)
 

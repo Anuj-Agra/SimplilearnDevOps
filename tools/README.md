@@ -1,6 +1,51 @@
 # Tools — Recursive Analysis Engine
 
-The `tools/` directory contains the recursive analysis engine that processes a PEGA KYC codebase rule by rule, with full checkpoint/resume support.
+The `tools/` directory contains the recursive analysis engine that processes a PEGA KYC
+codebase rule by rule, with full checkpoint/resume support.
+
+---
+
+## Two operating modes
+
+### Mode 1 — Hierarchy mode *(for real PEGA exports: COB / CRDFWApp / MSFWApp / PegaRules)*
+
+Your PEGA export is organised as 4 folders, each containing:
+- **Multiple `.json` manifest files** — rule inventory metadata (which one to use is set in config)
+- **Multiple `.bin` files** — native PEGA binary rule content
+
+```
+pega-export/
+  COB/          ← most specific (client overrides)        [tier 0]
+  CRDFWApp/     ← client framework application            [tier 1]
+  MSFWApp/      ← shared PEGA framework                   [tier 2]
+  PegaRules/    ← base PEGA rules                         [tier 3]
+```
+
+Edit `config/analysis_config.yaml`, then run:
+
+```bash
+# Validate your config before any LLM calls
+python tools/run.py validate-config --config config/analysis_config.yaml
+
+# Phase 1: build graph (zero cost — no LLM)
+python tools/run.py graph --config config/analysis_config.yaml
+
+# Phase 2+3: analyse and aggregate (uses Anthropic API)
+python tools/run.py analyse --config config/analysis_config.yaml
+
+# Resume after interruption (same command — no flags needed)
+python tools/run.py analyse --config config/analysis_config.yaml
+```
+
+### Mode 2 — Legacy mode *(for flat directories of exported JSON rule files)*
+
+```bash
+python tools/run.py analyse \
+  --rules-dir ./my-pega-export \
+  --workspace ./workspaces/kyc-cdd-v1 \
+  --root-casetype KYC-Work-CDD \
+  --role ba
+```
 
 ---
 
@@ -8,184 +53,115 @@ The `tools/` directory contains the recursive analysis engine that processes a P
 
 ```
 tools/
-├── run.py                          ← CLI entry point (run this)
-├── requirements.txt                ← pip install -r tools/requirements.txt
+├── run.py                              ← CLI entry point (5 commands)
+├── requirements.txt                    ← pip install -r tools/requirements.txt
+│
+├── config/
+│   └── config_loader.py               ← Loads analysis_config.yaml; resolves manifest versions
+│
+├── parser/
+│   ├── manifest_loader.py             ← Reads manifest JSON → list of rule records + BIN matches
+│   ├── bin_reader.py                  ← Extracts strings/references from PEGA .bin files
+│   └── hierarchy_loader.py            ← Merges all 4 tiers with most-specific-wins inheritance
 │
 ├── traversal/
-│   ├── reference_extractor.py      ← Extracts cross-rule refs from any rule type
-│   └── rule_graph.py               ← Directed graph of all rules + dependencies
+│   ├── reference_extractor.py         ← Extracts cross-rule references from any rule type
+│   └── rule_graph.py                  ← Directed dependency graph; BFS queue; cycle detection
+│                                         NEW: from_hierarchy_config() classmethod
 │
 ├── checkpoint/
-│   ├── checkpoint_manager.py       ← Saves/loads analysis state to disk
-│   └── context_assembler.py        ← Builds bounded LLM context per rule
+│   ├── checkpoint_manager.py          ← Persists manifest + queue + outputs to disk
+│   └── context_assembler.py           ← Builds bounded LLM context (token-budget aware)
 │
 ├── runner/
-│   └── recursive_analyser.py       ← Main analysis loop (Phase 1 → 2 → 3)
+│   └── recursive_analyser.py          ← Main Phase 1/2/3 loop
+│                                         NEW: accepts analysis_config= for hierarchy mode
 │
 └── tests/
-    └── test_reference_extractor.py ← Unit tests (run with pytest)
+    ├── test_reference_extractor.py    ← 20 tests for all 6 rule types
+    └── test_hierarchy_loading.py      ← 23 tests: config, manifest, BIN, hierarchy, integration
 ```
 
 ---
 
-## How it works
+## config/analysis_config.yaml — key settings
 
-### The token window problem
-
-A complex PEGA KYC codebase may contain hundreds of rules. A single flow can reference 20+ other rules (activities, when conditions, sub-flows, sections). Passing everything to the LLM at once is impossible.
-
-### The solution: 3-phase pipeline with checkpointing
-
-```
-Phase 1 — Graph (no LLM, seconds)
-  ├── Load all rule JSON files from your export directory
-  ├── Parse each rule type (CaseType, Flow, Activity, Flowsection, Section, When)
-  ├── Extract all cross-rule references
-  ├── Build a directed dependency graph
-  ├── Topological sort → ordered analysis queue
-  └── Save: rule_graph.json + manifest.json + queue.json
-
-Phase 2 — Analyse (LLM, minutes to hours depending on codebase size)
-  ├── Pop next rule from queue
-  ├── Assemble bounded context:
-  │     - The rule's own JSON (always)
-  │     - Summaries of direct dependencies (priority order, token-capped)
-  │     - CaseType overview as orientation (always)
-  │     - PEGA knowledge + KYC domain skills
-  ├── Call Claude API with appropriate agent system prompt
-  ├── Save output to analysis/{rule_id}.narrative.md
-  ├── Mark rule as done in checkpoint
-  └── Repeat — safe to interrupt at any point
-
-Phase 3 — Aggregate (no LLM, seconds)
-  ├── Concatenate all narratives → full_flow_narrative.md
-  └── Concatenate FRD fragments → frd_fragments.md
-```
-
-### Resuming after token limit / interruption
-
-When you run the analyser again with the same `--workspace`, it:
-1. Loads the existing checkpoint (manifest + queue)
-2. Resets any `in_progress` rules back to `pending` (crash recovery)
-3. Skips all `done` rules
-4. Continues from exactly the next `pending` rule
-
-You never lose completed analysis.
+| Setting | What it does |
+|---------|-------------|
+| `hierarchy[n].folder` | Path to this app's folder (COB / CRDFWApp / MSFWApp / PegaRules) |
+| `hierarchy[n].manifest_version` | `"latest"` = auto-pick highest version; `"01-02-03"` = exact match |
+| `hierarchy[n].include_in_analysis` | `true` = queue for LLM; `false` = load as context only |
+| `analysis.root_casetype` | `pyRuleName` of the root Case Type (e.g. `KYC-Work-CDD`) |
+| `analysis.role` | `ba` / `po` / `dev` / `qa` — tunes output language depth |
+| `analysis.max_rules_per_session` | Rules to process per run (re-run to continue) |
+| `analysis.token_budget_per_rule` | Input tokens for LLM context assembly (default 6000) |
+| `rule_type_filter` | Include/exclude rule types from the graph |
+| `bin_extraction.enabled` | Whether to extract strings from `.bin` files |
 
 ---
 
-## Quick start
+## How manifest version resolution works
 
-### 1. Install dependencies
+For each app folder the engine scans for `.json` files that look like PEGA manifests
+(contain `pxResults`, `rules`, `pyRuleSetName`, or a `pyRuleName` array).
 
-```bash
-pip install -r tools/requirements.txt
-```
+With `manifest_version: "latest"`:
+1. Reads `pyRuleSetVersion` field from each manifest's content
+2. Falls back to version string in filename (e.g. `manifest-01-02-03.json`)
+3. Picks the file with the highest version string
 
-### 2. Export your PEGA rules to JSON
-
-In PEGA Dev Studio or App Studio:
-- Go to **Records** → select rule type
-- Export as JSON (one file per rule, or a zip of JSON files)
-- Place all `.json` files in a directory (e.g. `./my-rules/`)
-
-The files can be in subdirectories — the engine scans recursively.
-
-### 3. Run Phase 1 (inspect graph before analysis)
-
-```bash
-python tools/run.py graph \
-  --rules-dir ./my-rules \
-  --workspace ./workspaces/kyc-v1 \
-  --root-casetype KYC-Work-CDD
-```
-
-This shows you the rule graph stats and analysis queue order **without calling the LLM**.
-Review the output — check for missing references and circular dependencies.
-
-### 4. Run full analysis
-
-```bash
-python tools/run.py analyse \
-  --rules-dir ./my-rules \
-  --workspace ./workspaces/kyc-v1 \
-  --root-casetype KYC-Work-CDD \
-  --role ba \
-  --max-rules 20
-```
-
-This processes up to 20 rules per session. Re-run the same command to continue.
-
-### 5. Check progress
-
-```bash
-python tools/run.py status --workspace ./workspaces/kyc-v1
-```
-
-### 6. Aggregate when complete
-
-```bash
-python tools/run.py aggregate --workspace ./workspaces/kyc-v1
-```
+With `manifest_version: "01-02-03"`:
+1. Exact match on `pyRuleSetVersion` field (dashes or dots both work)
+2. Falls back to filename match if content version not found
 
 ---
 
-## Workspace layout
+## How BIN extraction works
 
-```
-workspaces/{name}/
-├── manifest.json            ← Master rule list + status
-├── queue.json               ← Ordered pending rule IDs
-├── rule_graph.json          ← Full dependency graph
-├── session_log.jsonl        ← One line per completed LLM call
-│
-├── rules/
-│   └── {rule_id}.parsed.json    ← Phase-1 parsed rule (input to LLM)
-│
-├── analysis/
-│   ├── {rule_id}.narrative.md   ← Agent output: plain-English narrative
-│   ├── {rule_id}.frd-fragment.md← Agent output: FRD FR blocks
-│   └── {rule_id}.ac-fragment.md ← Agent output: acceptance criteria
-│
-├── context/
-│   └── {rule_id}.context.json   ← Assembled LLM context (for debugging)
-│
-└── aggregated/
-    ├── full_flow_narrative.md   ← All narratives concatenated
-    └── frd_fragments.md         ← All FRD fragments concatenated
-```
+PEGA `.bin` files are Java-serialised objects. The engine uses two strategies:
+1. **Regex extraction** — scans raw bytes for printable ASCII segments ≥ 4 chars
+2. **Java short-string format** — reads 2-byte length-prefixed UTF-8 strings
+
+From the extracted strings it identifies:
+- Rule type (`pxObjClass`) — looks for known PEGA rule type strings
+- Cross-rule references — `pyActivityName`, `pySubFlowName`, `pyFlowActionName`, etc.
+- Partial flow step reconstruction — detects Assignment/Utility/SubFlow/Decision patterns
+
+This gives the reference extractor enough information to build the dependency graph
+even without full JSON rule content.
 
 ---
 
-## Rule type processing
+## Most-specific-wins inheritance
 
-| Rule type | What is extracted | References followed |
-|-----------|------------------|-------------------|
-| `Rule-Obj-CaseType` | Stages, processes, entry flows, child cases | All stage flows, action flows, child CaseTypes |
-| `Rule-Obj-Flow` | Steps, decisions, assignments, connectors | SubFlow, Spinoff, Flowsection, Activity, When |
-| `Rule-Obj-Activity` | Steps, parameters, called activities | CallActivity (recursive), When conditions |
-| `Rule-Obj-Flowsection` | Screen, buttons, pre/post activities | Rule-HTML-Section, Activity, When |
-| `Rule-HTML-Section` | Fields, embedded sections, data pages | Embedded sections, When conditions |
-| `Rule-Obj-When` | Boolean expression, properties used | None (terminal node) |
+When the same rule (`pyClassName::pyRuleName`) exists in multiple tiers:
+
+```
+COB (tier 0) wins over CRDFWApp (tier 1) wins over MSFWApp (tier 2) wins over PegaRules (tier 3)
+```
+
+The winning rule is queued for LLM analysis (if its app has `include_in_analysis: true`).
+The overridden rules are discarded — they are not loaded as phantom context nodes.
 
 ---
 
-## Tuning token budget
+## CLI commands
 
-The `--token-budget` flag controls how much context is assembled per LLM call (default: 6000 tokens).
-
-| Budget | Use when |
-|--------|---------|
-| 3000 | Very large flows with many dependencies — prioritise the rule itself |
-| 6000 | Default — good balance of rule content + dependency context |
-| 8000 | Deep analysis needed — maximise dependency context |
-
-The assembler always includes the rule itself fully. If budget runs short, it truncates dependency summaries (starting from lowest-priority) rather than truncating the main rule.
+| Command | Purpose |
+|---------|---------|
+| `validate-config --config FILE` | Check all paths resolve; show manifest counts and selected files |
+| `graph --config FILE` | Build graph, print stats and analysis queue — no LLM, no cost |
+| `analyse --config FILE` | Run full analysis; resume automatically if re-run |
+| `status --workspace DIR` | Show current progress |
+| `aggregate --workspace DIR` | Concatenate outputs into `full_flow_narrative.md` + `frd_fragments.md` |
+| `reset --workspace DIR` | Wipe analysis outputs, keep BIN/rule files |
 
 ---
 
 ## Running tests
 
 ```bash
-python -m pytest tools/tests/ -v
+pip install -r tools/requirements.txt
+python tools/tests/test_reference_extractor.py    # 20 tests
+python tools/tests/test_hierarchy_loading.py       # 23 tests
 ```
