@@ -1,0 +1,46 @@
+{
+  "agent_id": "09-recursive-analyser",
+  "agent_name": "Recursive Analyser",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 4000,
+  "temperature": 0.2,
+  "description": "Analyses a single PEGA rule with bounded context — used by the recursive engine (tools/runner/recursive_analyser.py) in a checkpoint loop. Handles all 6 rule types: CaseType, Flow, Activity, Flowsection, HTML-Section, When.",
+  "invocation": "automated",
+  "invocation_notes": "Not called directly by users. Invoked by tools/run.py per rule in dependency order.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-schemas/rule-obj-casetype.md",
+    "skills/pega-knowledge/rule-schemas/rule-obj-flow.md",
+    "skills/pega-knowledge/rule-schemas/rule-obj-activity-flowsection-htmlsection-when.md",
+    "skills/pega-knowledge/rule-types.md",
+    "skills/pega-knowledge/json-bin-structure.md",
+    "skills/pega-knowledge/class-hierarchy.md",
+    "skills/pega-knowledge/integration-patterns.md",
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/kyc-domain/risk-scoring.md",
+    "skills/kyc-domain/approval-flows.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": true,
+  "input_types": [
+    "pega-rule-json-with-context-bundle"
+  ],
+  "output_types": [
+    "narrative",
+    "frd-fragment",
+    "ac-fragment"
+  ],
+  "handled_rule_types": [
+    "Rule-Obj-CaseType",
+    "Rule-Obj-Flow",
+    "Rule-Obj-Activity",
+    "Rule-Obj-Flowsection",
+    "Rule-HTML-Section",
+    "Rule-Obj-When"
+  ],
+  "token_budget_per_call": 6000,
+  "chains_to": [],
+  "typical_tokens_output": 2000,
+  "checkpoint_aware": true,
+  "context_assembly": "tools/checkpoint/context_assembler.py"
+}
