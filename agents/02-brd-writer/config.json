@@ -1,0 +1,25 @@
+{
+  "agent_id": "02-brd-writer",
+  "agent_name": "BRD Writer",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 4000,
+  "temperature": 0.3,
+  "description": "Produces a 14-section professional Business Requirements Document with numbered BRs, regulatory mapping, and stakeholder sign-off table.",
+  "skills_required": [
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/kyc-domain/risk-scoring.md",
+    "skills/kyc-domain/approval-flows.md",
+    "skills/kyc-domain/external-services.md",
+    "skills/document-templates/brd-template.md",
+    "skills/shared-context/kyc-glossary.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": false,
+  "input_types": ["flow-narrative-markdown", "text-description", "meeting-notes", "legacy-documentation"],
+  "output_types": ["brd-markdown"],
+  "chains_to": ["03-frd-writer"],
+  "typical_tokens_output": 3000,
+  "example_input": "examples/sample-outputs/flow-narrative-example.md",
+  "example_output": "examples/sample-outputs/brd-example.md"
+}

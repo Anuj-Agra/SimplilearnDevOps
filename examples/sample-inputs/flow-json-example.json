@@ -1,0 +1,220 @@
+{
+  "_comment": "Sample PEGA Flow rule JSON — KYC CDD Onboarding",
+  "_usage": "Paste this into Agent 01 (Flow Narrator) or Agent 06 (PEGA Expert) to see the agents in action",
+
+  "pyRuleName": "KYC_CDDOnboarding",
+  "pyClassName": "KYC-Work-CDD",
+  "pxObjClass": "Rule-Obj-Flow",
+  "pyRuleSet": "KYCOnboarding",
+  "pyRuleSetVersion": "01-02-03",
+  "pyDescription": "Main Customer Due Diligence onboarding flow for individual customers",
+  "pyAvailability": "Available",
+
+  "pyFlowSteps": [
+    {
+      "pyStepName": "CollectCustomerDetails",
+      "pyStepType": "Assignment",
+      "pyFlowActionName": "KYC_CollectCDDDetails",
+      "pySLAName": "KYC-SLA-CDDInitiation",
+      "pyRouterName": "KYC_RouterToKYCOps",
+      "pyLabel": "Collect Customer Details"
+    },
+    {
+      "pyStepName": "DocumentUpload",
+      "pyStepType": "Assignment",
+      "pyFlowActionName": "KYC_UploadDocuments",
+      "pySLAName": "KYC-SLA-DocumentSubmission",
+      "pyRouterName": "KYC_RouterToKYCOps",
+      "pyLabel": "Upload Identity Documents"
+    },
+    {
+      "pyStepName": "RunSanctionsScreening",
+      "pyStepType": "Utility",
+      "pyConnectorName": "KYC-Conn-SanctionsAPI",
+      "pyDataTransformName": "KYC_BuildSanctionsRequest",
+      "pyLabel": "Sanctions & PEP Screening"
+    },
+    {
+      "pyStepName": "ParseSanctionsResult",
+      "pyStepType": "Utility",
+      "pyDataTransformName": "KYC_ParseSanctionsResponse",
+      "pyLabel": "Parse Screening Result"
+    },
+    {
+      "pyStepName": "CheckSanctionsHit",
+      "pyStepType": "Decision",
+      "pyWhenName": "KYC_IsSanctionsHit",
+      "pyLabel": "Sanctions Hit?"
+    },
+    {
+      "pyStepName": "CalculateRiskScore",
+      "pyStepType": "Utility",
+      "pyDataTransformName": "KYC_CalculateCDDRiskScore",
+      "pyLabel": "Calculate Risk Score"
+    },
+    {
+      "pyStepName": "RouteByRiskRating",
+      "pyStepType": "Decision",
+      "pyWhenName": "KYC_IsHighRisk",
+      "pyLabel": "Route by Risk Rating"
+    },
+    {
+      "pyStepName": "AutoApprove",
+      "pyStepType": "Utility",
+      "pyDataTransformName": "KYC_AutoApproveCase",
+      "pyLabel": "Auto-Approve LOW Risk Case"
+    },
+    {
+      "pyStepName": "RMReview",
+      "pyStepType": "Assignment",
+      "pyFlowActionName": "KYC_RMReviewDecision",
+      "pySLAName": "KYC-SLA-RMReview",
+      "pyRouterName": "KYC_RouterToRM",
+      "pyLabel": "Relationship Manager Review"
+    },
+    {
+      "pyStepName": "ComplianceReview",
+      "pyStepType": "Assignment",
+      "pyFlowActionName": "KYC_ComplianceDecision",
+      "pySLAName": "KYC-SLA-ComplianceReview",
+      "pyRouterName": "KYC_RouterToCompliance",
+      "pyLabel": "Compliance Officer Review"
+    },
+    {
+      "pyStepName": "CheckEDDRequired",
+      "pyStepType": "Decision",
+      "pyWhenName": "KYC_IsEDDRequired",
+      "pyLabel": "EDD Required?"
+    },
+    {
+      "pyStepName": "SpawnEDDCase",
+      "pyStepType": "Spinoff",
+      "pySubFlowName": "KYC_EDDProcess",
+      "pySubFlowClass": "KYC-Work-EDD",
+      "pyLabel": "Spawn EDD Sub-Case"
+    },
+    {
+      "pyStepName": "RouteToSanctionsReview",
+      "pyStepType": "Utility",
+      "pyRouterName": "KYC_RouterToSanctions",
+      "pyLabel": "Route to Sanctions Review"
+    },
+    {
+      "pyStepName": "EndApproved",
+      "pyStepType": "End",
+      "pyStatusWork": "Resolved-Approved",
+      "pyLabel": "Case Approved"
+    },
+    {
+      "pyStepName": "EndRejected",
+      "pyStepType": "End",
+      "pyStatusWork": "Resolved-Rejected",
+      "pyLabel": "Case Rejected"
+    }
+  ],
+
+  "pyConnectors": [
+    {
+      "pyConnectName": "ToDocUpload",
+      "pyStepFrom": "CollectCustomerDetails",
+      "pyStepTo": "DocumentUpload",
+      "pyCondition": ""
+    },
+    {
+      "pyConnectName": "ToSanctionsScreening",
+      "pyStepFrom": "DocumentUpload",
+      "pyStepTo": "RunSanctionsScreening",
+      "pyCondition": ""
+    },
+    {
+      "pyConnectName": "ToParseResult",
+      "pyStepFrom": "RunSanctionsScreening",
+      "pyStepTo": "ParseSanctionsResult",
+      "pyCondition": ""
+    },
+    {
+      "pyConnectName": "ToCheckHit",
+      "pyStepFrom": "ParseSanctionsResult",
+      "pyStepTo": "CheckSanctionsHit",
+      "pyCondition": ""
+    },
+    {
+      "pyConnectName": "HitConfirmed",
+      "pyStepFrom": "CheckSanctionsHit",
+      "pyStepTo": "RouteToSanctionsReview",
+      "pyCondition": "SanctionsHitFlag == true"
+    },
+    {
+      "pyConnectName": "NoHit",
+      "pyStepFrom": "CheckSanctionsHit",
+      "pyStepTo": "CalculateRiskScore",
+      "pyCondition": "SanctionsHitFlag == false"
+    },
+    {
+      "pyConnectName": "IsHighRisk",
+      "pyStepFrom": "RouteByRiskRating",
+      "pyStepTo": "ComplianceReview",
+      "pyCondition": "RiskRating == \"HIGH\""
+    },
+    {
+      "pyConnectName": "IsMediumRisk",
+      "pyStepFrom": "RouteByRiskRating",
+      "pyStepTo": "RMReview",
+      "pyCondition": "RiskRating == \"MEDIUM\""
+    },
+    {
+      "pyConnectName": "IsLowRisk",
+      "pyStepFrom": "RouteByRiskRating",
+      "pyStepTo": "AutoApprove",
+      "pyCondition": "RiskRating == \"LOW\""
+    },
+    {
+      "pyConnectName": "AutoApproveToEnd",
+      "pyStepFrom": "AutoApprove",
+      "pyStepTo": "EndApproved",
+      "pyCondition": ""
+    },
+    {
+      "pyConnectName": "RMApproved",
+      "pyStepFrom": "RMReview",
+      "pyStepTo": "EndApproved",
+      "pyCondition": "ApprovalDecision == \"Approved\""
+    },
+    {
+      "pyConnectName": "RMRejected",
+      "pyStepFrom": "RMReview",
+      "pyStepTo": "EndRejected",
+      "pyCondition": "ApprovalDecision == \"Rejected\""
+    },
+    {
+      "pyConnectName": "RMEscalated",
+      "pyStepFrom": "RMReview",
+      "pyStepTo": "ComplianceReview",
+      "pyCondition": "ApprovalDecision == \"Escalate\""
+    },
+    {
+      "pyConnectName": "ComplianceCheckEDD",
+      "pyStepFrom": "ComplianceReview",
+      "pyStepTo": "CheckEDDRequired",
+      "pyCondition": "ApprovalDecision == \"EDD-Required\""
+    },
+    {
+      "pyConnectName": "ComplianceApproved",
+      "pyStepFrom": "ComplianceReview",
+      "pyStepTo": "EndApproved",
+      "pyCondition": "ApprovalDecision == \"Approved\""
+    },
+    {
+      "pyConnectName": "ComplianceRejected",
+      "pyStepFrom": "ComplianceReview",
+      "pyStepTo": "EndRejected",
+      "pyCondition": "ApprovalDecision == \"Rejected\""
+    },
+    {
+      "pyConnectName": "SpawnEDD",
+      "pyStepFrom": "CheckEDDRequired",
+      "pyStepTo": "SpawnEDDCase",
+      "pyCondition": "EDDRequired == true"
+    }
+  ]
+}

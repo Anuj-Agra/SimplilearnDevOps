@@ -1,0 +1,20 @@
+{
+  "agent_id": "07-ui-reader",
+  "agent_name": "UI Reader",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 3000,
+  "temperature": 0.3,
+  "description": "Reverse-engineers PEGA screens from screenshots, descriptions, or HTML exports. Outputs field inventory, action map, conditional logic, and inferred PEGA rule structure.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/kyc-domain/regulatory-framework.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": true,
+  "input_types": ["screenshot-description", "image", "html-export", "demo-notes"],
+  "output_types": ["ui-analysis-markdown"],
+  "chains_to": ["01-flow-narrator", "03-frd-writer", "04-jira-breakdown"],
+  "typical_tokens_output": 1800,
+  "notes": "For image inputs, describe the screenshot in the user message before invoking this agent."
+}

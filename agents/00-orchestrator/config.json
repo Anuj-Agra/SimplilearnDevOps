@@ -1,0 +1,20 @@
+{
+  "agent_id": "00-orchestrator",
+  "agent_name": "Orchestrator",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 2000,
+  "temperature": 0.2,
+  "description": "Routes user requests to the correct specialist agent. Does not produce deliverables itself.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/pega-knowledge/class-hierarchy.md",
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/shared-context/kyc-glossary.md"
+  ],
+  "role_adapter_required": false,
+  "hierarchy_context_required": true,
+  "input_types": ["json", "text", "markdown", "screenshot-description"],
+  "output_types": ["routing-recommendation", "workflow-plan", "clarifying-questions"],
+  "chains_to": ["01", "02", "03", "04", "05", "06", "07", "08"]
+}

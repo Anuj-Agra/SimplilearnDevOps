@@ -1,0 +1,24 @@
+{
+  "agent_id": "06-pega-expert",
+  "agent_name": "PEGA Expert",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 4000,
+  "temperature": 0.3,
+  "description": "Deep-dive PEGA Q&A: reads and explains any PEGA rule type (JSON/BIN), class hierarchy, integration patterns, connector configurations, data transforms, and KYC domain logic.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/pega-knowledge/json-bin-structure.md",
+    "skills/pega-knowledge/class-hierarchy.md",
+    "skills/pega-knowledge/integration-patterns.md",
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/kyc-domain/external-services.md",
+    "skills/shared-context/kyc-glossary.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": true,
+  "input_types": ["pega-json", "pega-bin", "question-text", "screenshot-description"],
+  "output_types": ["technical-explanation-markdown"],
+  "chains_to": ["01-flow-narrator", "03-frd-writer"],
+  "typical_tokens_output": 1500
+}

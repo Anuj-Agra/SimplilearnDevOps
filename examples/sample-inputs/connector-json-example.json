@@ -1,0 +1,57 @@
+{
+  "_comment": "Sample PEGA Connector and Metadata rule JSON — Sanctions Screening API",
+  "_usage": "Paste this into Agent 08 (Integration Mapper) or Agent 06 (PEGA Expert)",
+
+  "pyRuleName": "KYC-Conn-SanctionsAPI",
+  "pyClassName": "KYC-Work-CDD",
+  "pxObjClass": "Rule-Connect-REST",
+  "pyRuleSet": "KYCOnboarding",
+  "pyRuleSetVersion": "01-02-03",
+  "pyDescription": "REST connector to the ACME Sanctions Screening API for OFAC, UN, EU, and HMT list screening",
+  "pyAvailability": "Available",
+
+  "pyServiceURL": "https://api.sanctions-provider.com/v2/screen/individual",
+  "pyHTTPMethod": "POST",
+  "pyTimeout": "5000",
+  "pyAuthProfile": "SanctionsAPIAuth",
+  "pySSLProfile": "KYCTLSProfile",
+
+  "pyRequestDataTransform": "KYC_BuildSanctionsRequest",
+  "pyResponseDataTransform": "KYC_ParseSanctionsResponse",
+  "pyResponseClass": "KYC-Data-SanctionsResponse",
+
+  "pyHeaders": [
+    { "pyName": "Content-Type", "pyValue": "application/json" },
+    { "pyName": "Accept", "pyValue": "application/json" },
+    { "pyName": "X-Client-Version", "pyValue": "2.1" }
+  ],
+
+  "pyQueryParameters": [],
+
+  "pyErrorHandling": "pyServiceFailed",
+  "pyRetryCount": "3",
+  "pyRetryInterval": "2000",
+
+  "pyRequestDataTransformDetails": {
+    "_comment": "Linked Data Transform — KYC_BuildSanctionsRequest",
+    "pyDataTransformSteps": [
+      { "pyMode": "Set", "pyTarget": ".requestBody.firstName", "pySource": ".CustomerFirstName" },
+      { "pyMode": "Set", "pyTarget": ".requestBody.lastName", "pySource": ".CustomerLastName" },
+      { "pyMode": "Set", "pyTarget": ".requestBody.dateOfBirth", "pySource": ".CustomerDOB" },
+      { "pyMode": "Set", "pyTarget": ".requestBody.nationality", "pySource": ".CustomerNationality" },
+      { "pyMode": "Set", "pyTarget": ".requestBody.caseReference", "pySource": ".pzInsKey" },
+      { "pyMode": "Set", "pyTarget": ".requestBody.screeningLists", "pySource": "\"OFAC,UN,EU,HMT\"" }
+    ]
+  },
+
+  "pyResponseDataTransformDetails": {
+    "_comment": "Linked Data Transform — KYC_ParseSanctionsResponse",
+    "pyDataTransformSteps": [
+      { "pyMode": "Set", "pyTarget": ".SanctionsHitFlag", "pySource": ".responseBody.screeningResult" },
+      { "pyMode": "Set", "pyTarget": ".SanctionsMatchScore", "pySource": ".responseBody.highestMatchScore" },
+      { "pyMode": "Set", "pyTarget": ".SanctionsReferenceID", "pySource": ".responseBody.referenceId" },
+      { "pyMode": "Set", "pyTarget": ".SanctionsHitCount", "pySource": ".responseBody.hitCount" },
+      { "pyMode": "Append", "pyTarget": ".SanctionsHitDetails", "pySource": ".responseBody.matches" }
+    ]
+  }
+}

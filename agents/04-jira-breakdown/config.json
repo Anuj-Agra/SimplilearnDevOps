@@ -1,0 +1,23 @@
+{
+  "agent_id": "04-jira-breakdown",
+  "agent_name": "Jira Breakdown",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 4000,
+  "temperature": 0.3,
+  "description": "Decomposes features and FRDs into a full Epic → Story → Task → Sub-task Jira hierarchy with Fibonacci estimates, PEGA rule prefixes, dependency map, and release phasing.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/kyc-domain/approval-flows.md",
+    "skills/document-templates/jira-ticket-template.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": true,
+  "input_types": ["frd-markdown", "brd-markdown", "flow-narrative-markdown", "text-description"],
+  "output_types": ["jira-breakdown-markdown"],
+  "chains_to": ["05-acceptance-criteria"],
+  "typical_tokens_output": 3500,
+  "example_input": "examples/sample-outputs/frd-example.md",
+  "example_output": "examples/sample-outputs/jira-breakdown-example.md"
+}

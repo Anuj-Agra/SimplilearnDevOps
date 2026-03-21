@@ -1,0 +1,24 @@
+{
+  "agent_id": "08-integration-mapper",
+  "agent_name": "Integration Mapper",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 3000,
+  "temperature": 0.2,
+  "description": "Produces a full Integration Catalogue from PEGA connector JSON, flow references, or service descriptions. Covers request/response payloads, error handling, SLAs, security, and resilience patterns.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/pega-knowledge/json-bin-structure.md",
+    "skills/pega-knowledge/integration-patterns.md",
+    "skills/kyc-domain/external-services.md",
+    "skills/kyc-domain/regulatory-framework.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": true,
+  "input_types": ["connector-json", "flow-json", "openapi-spec", "wsdl", "text-description"],
+  "output_types": ["integration-catalogue-markdown"],
+  "chains_to": ["03-frd-writer"],
+  "typical_tokens_output": 2500,
+  "example_input": "examples/sample-inputs/connector-json-example.json",
+  "example_output": "examples/sample-outputs/integration-catalogue-example.md"
+}

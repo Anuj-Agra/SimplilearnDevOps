@@ -1,0 +1,27 @@
+{
+  "agent_id": "03-frd-writer",
+  "agent_name": "FRD Writer",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 4000,
+  "temperature": 0.2,
+  "description": "Produces a detailed 13-section Functional Requirements Document with numbered FRs, integration specs, data requirements, traceability matrix.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/pega-knowledge/json-bin-structure.md",
+    "skills/pega-knowledge/integration-patterns.md",
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/kyc-domain/risk-scoring.md",
+    "skills/kyc-domain/approval-flows.md",
+    "skills/kyc-domain/external-services.md",
+    "skills/document-templates/frd-template.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": true,
+  "input_types": ["brd-markdown", "flow-narrative-markdown", "pega-rule-json", "text-description"],
+  "output_types": ["frd-markdown"],
+  "chains_to": ["04-jira-breakdown", "05-acceptance-criteria"],
+  "typical_tokens_output": 3500,
+  "example_input": "examples/sample-outputs/brd-example.md",
+  "example_output": "examples/sample-outputs/frd-example.md"
+}

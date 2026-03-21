@@ -1,0 +1,28 @@
+{
+  "agent_id": "01-flow-narrator",
+  "agent_name": "Flow Narrator",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 4000,
+  "temperature": 0.3,
+  "description": "Converts PEGA flow rules, JSON/BIN exports, and flow descriptions into 9-section plain-English narratives.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/pega-knowledge/json-bin-structure.md",
+    "skills/pega-knowledge/class-hierarchy.md",
+    "skills/pega-knowledge/integration-patterns.md",
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/kyc-domain/risk-scoring.md",
+    "skills/kyc-domain/approval-flows.md",
+    "skills/kyc-domain/external-services.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": true,
+  "input_types": ["pega-flow-json", "pega-bin", "data-transform-json", "connector-json", "text-description", "screenshot-description"],
+  "output_types": ["flow-narrative-markdown"],
+  "output_template": "agents/01-flow-narrator/system-prompt.md#mandatory-output-format",
+  "chains_to": ["02-brd-writer", "03-frd-writer"],
+  "typical_tokens_output": 1500,
+  "example_input": "examples/sample-inputs/flow-json-example.json",
+  "example_output": "examples/sample-outputs/flow-narrative-example.md"
+}

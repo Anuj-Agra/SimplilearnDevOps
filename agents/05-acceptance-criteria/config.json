@@ -1,0 +1,26 @@
+{
+  "agent_id": "05-acceptance-criteria",
+  "agent_name": "Acceptance Criteria",
+  "version": "1.0.0",
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 4000,
+  "temperature": 0.2,
+  "description": "Generates comprehensive Gherkin acceptance criteria covering happy path, error, edge, integration failure, SLA, regulatory, and security scenarios with a traceability matrix.",
+  "skills_required": [
+    "skills/pega-knowledge/rule-types.md",
+    "skills/pega-knowledge/integration-patterns.md",
+    "skills/kyc-domain/regulatory-framework.md",
+    "skills/kyc-domain/risk-scoring.md",
+    "skills/kyc-domain/approval-flows.md",
+    "skills/kyc-domain/external-services.md",
+    "skills/document-templates/acceptance-criteria-template.md"
+  ],
+  "role_adapter_required": true,
+  "hierarchy_context_required": false,
+  "input_types": ["jira-story", "frd-fr-block", "flow-narrative-markdown", "text-description", "brd-br-block"],
+  "output_types": ["acceptance-criteria-gherkin-markdown"],
+  "chains_to": [],
+  "typical_tokens_output": 3000,
+  "example_input": "examples/sample-outputs/jira-breakdown-example.md",
+  "example_output": "examples/sample-outputs/acceptance-criteria-example.md"
+}
