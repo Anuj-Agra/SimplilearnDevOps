@@ -1,0 +1,50 @@
+{
+  // ─── Copilot Chat Settings ──────────────────────────────────────────────
+  // These settings optimize Copilot Chat for the agent system.
+
+  // Enable prompt files from .github/copilot/ directory
+  "chat.promptFiles": true,
+
+  // Expand the context window — agents need broad codebase visibility
+  "github.copilot.chat.maxContextLines": 500,
+
+  // Enable workspace indexing for @workspace references
+  "github.copilot.chat.indexWorkspace": true,
+
+  // Automatically include open editors as context
+  "github.copilot.chat.includeOpenEditors": true,
+
+  // Enable follow-up suggestions for multi-step agent workflows
+  "github.copilot.chat.followUps": "always",
+
+  // ─── File Exclusions ────────────────────────────────────────────────────
+  // Keep agent search focused on code, not build artifacts
+
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.git": true,
+    "**/__pycache__": true,
+    "**/vendor": true,
+    "**/.venv": true,
+    "**/coverage": true,
+    "**/.next": true,
+    "**/.nuxt": true
+  },
+
+  // ─── Search Exclusions ──────────────────────────────────────────────────
+  // Same exclusions for VS Code's built-in search (used by @workspace)
+
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/*.min.js": true,
+    "**/*.min.css": true,
+    "**/package-lock.json": true,
+    "**/yarn.lock": true,
+    "**/pnpm-lock.yaml": true,
+    "**/.git": true
+  }
+}
