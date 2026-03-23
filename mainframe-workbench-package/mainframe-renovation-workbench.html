@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mainframe Renovation Workbench</title>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  window._mermaid = mermaid;
+  mermaid.initialize({ startOnLoad: false, theme: 'dark', darkMode: true });
+</script>
+
+<style>
+:root {
+  --bg:      #0D1117;
+  --surf:    #161B22;
+  --surf2:   #21262D;
+  --border:  #30363D;
+  --text:    #E6EDF3;
+  --muted:   #8B949E;
+  --amber:   #F0883E;
+  --amber-d: #A85C1E;
+  --green:   #3FB950;
+  --blue:    #58A6FF;
+  --red:     #F85149;
+  --purple:  #BC8CFF;
+  --teal:    #39D0BE;
+  --font-ui: -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  --r: 6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── HEADER ─────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surf);
+  flex-shrink: 0;
+}
+.logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
+}
+.logo-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--amber); display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #000; font-weight: 900;
+}
+.logo-text span { color: var(--amber); }
+#project-name {
+  background: transparent; border: 1px solid transparent; border-radius: 4px;
+  color: var(--muted); font-size: 12px; padding: 2px 6px;
+  outline: none; min-width: 180px;
+  transition: border-color .15s, color .15s;
+}
+#project-name:hover, #project-name:focus {
+  border-color: var(--border); color: var(--text);
+}
+.hdr-spacer { flex: 1; }
+.file-badge {
+  background: var(--surf2); border: 1px solid var(--border);
+  border-radius: 99px; padding: 2px 10px; font-size: 11px; color: var(--muted);
+}
+.file-badge span { color: var(--amber); font-weight: 600; }
+.btn-dl-all {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--amber); color: #000;
+  border: none; border-radius: var(--r); padding: 6px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.btn-dl-all:hover { background: #e07830; }
+.btn-dl-all:active { transform: scale(.97); }
+
+/* ── WORKSPACE ───────────────────────────────────── */
+.workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+aside {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surf);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-section {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+
+/* Upload zone */
+.upload-zone {
+  border: 1.5px dashed var(--border); border-radius: var(--r);
+  padding: 14px 10px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
+  color: var(--muted); font-size: 11px;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--amber); background: rgba(240,136,62,.07); }
+.upload-zone .up-icon { font-size: 20px; margin-bottom: 4px; }
+.upload-zone strong { display: block; color: var(--text); font-size: 12px; margin-bottom: 2px; }
+.ext-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; justify-content: center; }
+.ext-chip { background: var(--surf2); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-size: 9px; color: var(--muted); font-family: var(--font-mono); }
+#file-input { display: none; }
+
+/* File list */
+.file-list { flex: 1; overflow-y: auto; padding: 8px; }
+.file-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px; border-radius: 4px; cursor: default;
+  transition: background .1s;
+}
+.file-item:hover { background: var(--surf2); }
+.file-type-badge {
+  font-size: 9px; font-weight: 700; font-family: var(--font-mono);
+  padding: 2px 4px; border-radius: 3px; flex-shrink: 0; min-width: 30px;
+  text-align: center;
+}
+.ft-nat  { background: #1a3a2a; color: #3FB950; }
+.ft-cob  { background: #1a2a3a; color: #58A6FF; }
+.ft-pdf  { background: #3a1a1a; color: #F85149; }
+.ft-xls  { background: #1a3a1a; color: #56D364; }
+.ft-doc  { background: #1a2a3a; color: #79C0FF; }
+.ft-img  { background: #2a1a3a; color: #BC8CFF; }
+.ft-txt  { background: #2a2a1a; color: #E3B341; }
+.file-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.file-size { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+.file-remove { color: var(--muted); cursor: pointer; font-size: 14px; flex-shrink: 0; transition: color .1s; }
+.file-remove:hover { color: var(--red); }
+
+.no-files { padding: 16px; text-align: center; color: var(--muted); font-size: 11px; }
+
+/* ── MAIN PANEL ──────────────────────────────────── */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tabs */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surf);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 12px 18px; cursor: pointer; font-size: 12px; font-weight: 500;
+  color: var(--muted); border-bottom: 2px solid transparent;
+  white-space: nowrap; transition: color .15s, border-color .15s;
+  flex-shrink: 0;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+.tab-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* Output area */
+.output-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  position: relative;
+}
+.output-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--muted); gap: 12px; text-align: center;
+}
+.output-empty-icon { font-size: 36px; opacity: .4; }
+.output-empty h3 { font-size: 15px; color: var(--text); font-weight: 500; }
+.output-empty p { font-size: 12px; max-width: 340px; line-height: 1.6; }
+
+.output-content { max-width: 880px; }
+.output-content h1 { font-size: 20px; font-weight: 600; margin-bottom: 12px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.output-content h2 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; color: var(--amber); }
+.output-content h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: var(--teal); }
+.output-content p { margin-bottom: 10px; line-height: 1.7; color: var(--text); }
+.output-content ul, .output-content ol { margin: 0 0 10px 20px; line-height: 1.8; }
+.output-content li { color: var(--text); }
+.output-content code {
+  font-family: var(--font-mono); font-size: 12px;
+  background: var(--surf2); border: 1px solid var(--border);
+  border-radius: 3px; padding: 1px 5px; color: var(--green);
+}
+.output-content pre {
+  background: var(--surf2); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px; overflow-x: auto; margin-bottom: 14px;
+}
+.output-content pre code {
+  background: none; border: none; padding: 0; color: var(--green); font-size: 12px; line-height: 1.6;
+}
+.output-content table {
+  width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 12px;
+}
+.output-content th {
+  background: var(--surf2); color: var(--amber); font-weight: 600;
+  padding: 7px 10px; text-align: left; border: 1px solid var(--border);
+}
+.output-content td { padding: 6px 10px; border: 1px solid var(--border); color: var(--text); }
+.output-content tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+.output-content strong { color: var(--text); font-weight: 600; }
+.output-content blockquote {
+  border-left: 3px solid var(--amber); padding: 8px 14px;
+  margin-bottom: 10px; background: rgba(240,136,62,.07);
+  border-radius: 0 4px 4px 0;
+}
+.output-content blockquote p { color: var(--muted); margin: 0; }
+.output-content hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* Status badges inside output */
+.badge-red   { display: inline-block; padding: 2px 8px; border-radius: 99px; background: rgba(248,81,73,.2); color: #F85149; font-size: 11px; font-weight: 600; }
+.badge-amber { display: inline-block; padding: 2px 8px; border-radius: 99px; background: rgba(240,136,62,.2); color: #F0883E; font-size: 11px; font-weight: 600; }
+.badge-green { display: inline-block; padding: 2px 8px; border-radius: 99px; background: rgba(63,185,80,.2); color: #3FB950; font-size: 11px; font-weight: 600; }
+
+/* Loading spinner */
+.loading-bar {
+  position: sticky; top: 0; left: 0; right: 0;
+  background: var(--surf); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; display: flex; align-items: center; gap: 10px; z-index: 10;
+}
+.spinner {
+  width: 16px; height: 16px; border: 2px solid var(--border);
+  border-top-color: var(--amber); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 12px; color: var(--muted); }
+.stream-cursor::after { content: '▋'; animation: blink .8s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Mermaid */
+#mermaid-container { background: var(--surf2); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-top: 12px; }
+#mermaid-container svg { max-width: 100%; }
+
+/* Bottom action bar */
+.action-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surf);
+  flex-shrink: 0;
+}
+.action-bar .hint { font-size: 11px; color: var(--muted); flex: 1; }
+.btn { display: flex; align-items: center; gap: 6px; border-radius: var(--r); padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--amber); color: #000; }
+.btn-primary:hover { background: #e07830; }
+.btn-primary:disabled { background: var(--surf2); color: var(--muted); cursor: not-allowed; transform: none; }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surf2); border-color: var(--muted); }
+.btn-ghost:disabled { color: var(--muted); cursor: not-allowed; transform: none; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.mermaid-src {
+  background: var(--surf2); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px; font-family: var(--font-mono); font-size: 11px; line-height: 1.6;
+  color: var(--green); white-space: pre; overflow-x: auto; margin-top: 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">MF</div>
+    <span class="logo-text">Mainframe <span>Workbench</span></span>
+  </div>
+  <input id="project-name" type="text" value="My Mainframe Renovation" title="Click to rename project"/>
+  <div class="hdr-spacer"></div>
+  <div class="file-badge" id="file-badge"><span id="file-count">0</span> files loaded</div>
+  <button class="btn-dl-all" onclick="downloadAllZip()">⬇ Download Project ZIP</button>
+</header>
+
+<div class="workspace">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Ingest Files</div>
+      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="up-icon">📂</div>
+        <strong>Drop files or click to upload</strong>
+        <span>All source types supported</span>
+        <div class="ext-chips">
+          <span class="ext-chip">.nsp</span><span class="ext-chip">.nsn</span><span class="ext-chip">.cbl</span>
+          <span class="ext-chip">.pdf</span><span class="ext-chip">.xlsx</span><span class="ext-chip">.docx</span>
+          <span class="ext-chip">.txt</span><span class="ext-chip">.png</span><span class="ext-chip">.jpg</span>
+        </div>
+      </div>
+      <input type="file" id="file-input" multiple accept="*/*"/>
+    </div>
+
+    <div class="sidebar-label" style="padding: 10px 12px 4px;">Loaded Files</div>
+    <div class="file-list" id="file-list">
+      <div class="no-files" id="no-files-msg">No files loaded yet.<br>Upload Natural, COBOL, Adabas DDMs,<br>PDFs, Excel, or Word docs.</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <!-- TAB BAR -->
+    <div class="tab-bar" id="tab-bar">
+      <div class="tab active" data-tab="analyse"      onclick="setTab('analyse')">      <span>📋</span> Code Analysis</div>
+      <div class="tab"        data-tab="brd"          onclick="setTab('brd')">          <span>📄</span> BRD / FRD</div>
+      <div class="tab"        data-tab="jira"         onclick="setTab('jira')">         <span>🎯</span> Jira Stories</div>
+      <div class="tab"        data-tab="diagram"      onclick="setTab('diagram')">      <span>📊</span> Mermaid Diagram</div>
+      <div class="tab"        data-tab="renovation"   onclick="setTab('renovation')">   <span>☕</span> Java + Angular</div>
+      <div class="tab"        data-tab="obsolescence" onclick="setTab('obsolescence')"> <span>🔍</span> Obsolescence</div>
+    </div>
+
+    <!-- OUTPUT AREA -->
+    <div class="output-area" id="output-area">
+      <div class="output-empty" id="empty-state">
+        <div class="output-empty-icon">🏗️</div>
+        <h3>Ready to analyse your mainframe system</h3>
+        <p>Upload your Natural/COBOL source files, Adabas DDMs, reference table definitions, PDFs, Excel specs, and Word documents — then select a tab and click <strong>Run Agent</strong>.</p>
+        <p style="margin-top:8px;">All six agents share the same uploaded context, so you only need to upload once.</p>
+      </div>
+      <div class="output-content" id="output-content" style="display:none"></div>
+    </div>
+
+    <!-- ACTION BAR -->
+    <div class="action-bar">
+      <span class="hint" id="action-hint">Upload files to get started, then run an agent.</span>
+      <button class="btn btn-ghost" id="btn-copy" onclick="copyOutput()" disabled>Copy</button>
+      <button class="btn btn-ghost" id="btn-dl-tab" onclick="downloadTab()" disabled>⬇ Save Output</button>
+      <button class="btn btn-primary" id="btn-run" onclick="runAgent()" disabled>▶ Run Agent</button>
+    </div>
+  </main>
+
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const state = {
+  files: [],       // { name, type, ext, size, text, base64, mimeType }
+  outputs: {},     // keyed by tab id
+  activeTab: 'analyse',
+  loading: false
+};
+
+// ─── AGENT SYSTEM PROMPTS ────────────────────────────────────────────────────
+const AGENTS = {
+  analyse: {
+    label: 'Code Analysis',
+    hint: 'Analyses Natural/COBOL programs, CICS transactions, call hierarchy, and field usage across all uploaded source files.',
+    color: '#58A6FF',
+    system: `You are a senior mainframe expert specialising in Natural (Software AG) and COBOL programs running under CICS on IBM z/OS with Adabas databases.
+
+Analyse ALL uploaded source files and produce a comprehensive structured report covering:
+
+1. **Program Inventory** — list every program, subprogram, map, and copybook found, grouped by Natural library or COBOL load library.
+2. **CICS Transaction Map** — for each transaction ID found, list the entry program and the full call chain (CALLNAT, PERFORM, LINK, XCTL, RETURN).
+3. **Field Usage Matrix** — for every significant field (especially those in Adabas READ/FIND/UPDATE/STORE statements), show: which programs READ it, which programs WRITE it, and which programs PASS it as a parameter.
+4. **Adabas File Access Summary** — list each Adabas file number (FNR) accessed, the access type (READ, FIND, UPDATE, STORE, DELETE), and the fields touched.
+5. **Reference Table Usage** — identify all reference table lookups, the key field used, and the consuming programs.
+6. **Business Logic Highlights** — summarise the key business rules found in the code (validations, calculations, conditional flows).
+7. **Data Flows** — describe the end-to-end data flow from CICS screen input → program processing → Adabas read/write → screen output.
+
+Use structured markdown with clear headings, tables where useful, and code blocks for Natural/COBOL snippets.
+Be specific: use actual program names, field names, and transaction IDs from the uploaded files.
+If no code files are uploaded, describe what you would expect to find and what the user should upload.`
+  },
+
+  brd: {
+    label: 'BRD / FRD',
+    hint: 'Generates a Business Requirements Document and Functional Requirements Document from the uploaded materials.',
+    color: '#3FB950',
+    system: `You are a senior business analyst with deep expertise in mainframe system modernisation. Based on ALL uploaded files (Natural/COBOL source, Adabas DDMs, PDFs, Excel specs, Word documents, screenshots), generate two structured documents:
+
+## PART 1 — BUSINESS REQUIREMENTS DOCUMENT (BRD)
+
+Structure:
+1. Executive Summary
+2. Business Context & Objectives
+3. Scope (in-scope / out-of-scope)
+4. Stakeholders & Actors
+5. Business Process Flows (in plain English, describing what each CICS transaction/screen flow does)
+6. Business Rules (extracted from code logic — validations, mandatory fields, calculations, date rules)
+7. Data Requirements (key entities, their business meaning, and data quality rules)
+8. Non-Functional Requirements (inferred from the mainframe context — performance, availability, audit trail, security)
+9. Assumptions & Constraints
+10. Glossary (mainframe acronyms and business terms)
+
+## PART 2 — FUNCTIONAL REQUIREMENTS DOCUMENT (FRD)
+
+Structure:
+1. System Overview
+2. Functional Requirements (numbered FR-001, FR-002...) — each with: Description, Source (which program/screen), Priority (MoSCoW), Rationale
+3. Screen / UI Requirements (each CICS screen becomes a UI spec with field list, validations, navigation)
+4. Data Requirements (Adabas files → logical data model, reference tables → lookup specs)
+5. Interface Requirements (any external system calls found in code)
+6. Business Rule Catalogue (BR-001, BR-002... with rule text, source program, and impact)
+7. Test Scenarios (high-level, derived from business rules and screen flows)
+
+Use professional document formatting with numbered sections, tables, and clear language understandable to both business and technical stakeholders.
+Extract all content from the actual uploaded files — do not invent requirements not evidenced in the materials.`
+  },
+
+  jira: {
+    label: 'Jira Stories',
+    hint: 'Breaks requirements into Epics, Stories, and Sub-tasks with Gherkin acceptance criteria ready for a Java + Angular renovation sprint.',
+    color: '#F0883E',
+    system: `You are an agile delivery expert specialising in mainframe-to-Java/Angular modernisation programmes.
+
+Based on ALL uploaded files, generate a complete Jira work breakdown for the renovation project, targeting a Java Spring Boot backend + Angular frontend replacement.
+
+Structure the output as:
+
+## EPIC BREAKDOWN
+
+For each major functional area (e.g. one CICS transaction or Adabas file group), create an Epic:
+- **Epic Key**: EP-001, EP-002...
+- **Epic Name**: Business-friendly name
+- **Description**: What this epic covers, mapped from the mainframe function
+- **Business Value**: Why this epic matters
+
+## USER STORIES
+
+Under each Epic, list User Stories following INVEST principles:
+- **Story Key**: US-001, US-002...
+- **Story**: As a [role], I want [feature] so that [benefit]
+- **Source**: Which Natural program / CICS transaction / screen this maps to
+- **Story Points**: Estimate (1, 2, 3, 5, 8, 13)
+- **Priority**: Must Have / Should Have / Could Have / Won't Have
+
+## ACCEPTANCE CRITERIA
+
+For each story, provide Gherkin-format acceptance criteria:
+\`\`\`gherkin
+Given [precondition from mainframe business rule]
+When [user action / system event]
+Then [expected outcome / validation]
+And [additional assertion]
+\`\`\`
+
+## TECHNICAL TASKS (Sub-tasks per story)
+
+- Angular component to build (with module, component name)
+- Java service/controller to implement (with package suggestion)
+- JPA Entity / DTO to create (mapped from Adabas DDM field)
+- API endpoint to expose (REST verb + path)
+- Unit test coverage required
+
+## RENOVATION-SPECIFIC STORIES
+
+Always include stories for:
+- Data migration from Adabas to target database (per file number)
+- Reference table migration to enum/config service
+- Regression testing vs mainframe baseline
+- Performance benchmarking
+- Cutover and rollback plan
+
+Format as a clean markdown table where appropriate, and group by Epic.`
+  },
+
+  diagram: {
+    label: 'Mermaid Diagram',
+    hint: 'Generates a Mermaid flowchart from CICS entry point through programs to Adabas files and reference tables.',
+    color: '#BC8CFF',
+    system: `You are a mainframe architecture diagramming expert. Analyse ALL uploaded source files and generate Mermaid diagrams showing the complete system hierarchy.
+
+Generate the following diagrams:
+
+## DIAGRAM 1 — Program Call Hierarchy (flowchart TD)
+
+Starting from each CICS Transaction ID, trace the complete call chain:
+- CICS Transaction → Entry Natural Program → Called Subprograms → Adabas FILEs → Reference Tables
+
+Use these node shapes:
+- CICS Transaction: [[ TXN-ID ]] (stadium shape)
+- Natural Programs: [ PGM-NAME ] (rectangle)
+- COBOL Programs: [ PGM-NAME\nCOBOL ] (rectangle)
+- Adabas Files: [( FNR-NAME )] (cylinder)
+- Reference Tables: {{ REF-TABLE-NAME }} (hexagon)
+- CICS Maps/Screens: > SCREEN-NAME ] (asymmetric)
+
+Color-code using classDef:
+\`\`\`
+classDef cics fill:#1a3a5a,stroke:#58A6FF,color:#58A6FF
+classDef natpgm fill:#1a3a2a,stroke:#3FB950,color:#3FB950
+classDef adabas fill:#3a2a1a,stroke:#F0883E,color:#F0883E
+classDef reftbl fill:#2a1a3a,stroke:#BC8CFF,color:#BC8CFF
+classDef screen fill:#2a2a1a,stroke:#E3B341,color:#E3B341
+\`\`\`
+
+## DIAGRAM 2 — Data Entity Relationship (erDiagram)
+
+For all Adabas files found, show:
+- File entities with their key fields
+- Relationships between files (where one program uses multiple files and links them by a key)
+- Reference table lookups shown as relationships
+
+## DIAGRAM 3 — Java + Angular Renovation Target Architecture (flowchart LR)
+
+Show the TO-BE architecture:
+- Angular Components (mapped from CICS screens)
+- Angular Services → REST API calls
+- Spring Boot Controllers → Services → Repositories
+- JPA Entities (mapped from Adabas files)
+- Database (PostgreSQL/Oracle)
+- Reference tables → Spring @Configuration beans
+
+Output each diagram in a clearly labelled \`\`\`mermaid code block.
+After each diagram, add a brief explanation of what it shows.
+Use actual names from the uploaded files — do not use generic placeholders.`
+  },
+
+  renovation: {
+    label: 'Java + Angular',
+    hint: 'Generates a detailed Java Spring Boot + Angular renovation guide with code stubs, field mappings, and architectural recommendations.',
+    color: '#39D0BE',
+    system: `You are a senior Java/Angular architect specialising in mainframe modernisation. Your task is to produce a comprehensive renovation guide for migrating the uploaded mainframe system to Java Spring Boot (backend) + Angular 17+ (frontend).
+
+## SECTION 1 — TECHNOLOGY MAPPING
+
+Produce a table mapping each mainframe concept to its Java/Angular equivalent:
+
+| Mainframe Concept | Mainframe Example | Java/Angular Equivalent | Notes |
+|---|---|---|---|
+| Natural Program | ORDERMGR | Spring Boot @Service class | ... |
+| CICS Transaction | ORDR | Angular Route + Controller | ... |
+| Adabas File | FNR=12 ORDERS | JPA @Entity + @Repository | ... |
+| CICS Map | ORDERMAP | Angular Component + Reactive Form | ... |
+| Reference Table | CUST-TYPE | Spring @Configuration + enum | ... |
+| Natural Subprogram | CALCDISC | Private @Service method or @Component | ... |
+
+## SECTION 2 — JAVA CODE STUBS
+
+For EACH Natural program / COBOL program found, generate:
+
+### Controller stub:
+\`\`\`java
+@RestController
+@RequestMapping("/api/[business-area]")
+public class [ClassName]Controller {
+    // endpoints mapped from CICS transaction actions
+}
+\`\`\`
+
+### Service stub:
+\`\`\`java
+@Service
+public class [ClassName]Service {
+    // business logic from Natural program
+    // validation rules preserved from original code
+}
+\`\`\`
+
+### JPA Entity (per Adabas file):
+\`\`\`java
+@Entity
+@Table(name = "[table_name]")
+public class [EntityName] {
+    // fields mapped from DDM with original field descriptions as comments
+    // @Id, @Column, validation annotations
+}
+\`\`\`
+
+### DTO:
+\`\`\`java
+public record [EntityName]Dto(
+    // fields with Jakarta validation annotations mirroring original business rules
+) {}
+\`\`\`
+
+## SECTION 3 — ANGULAR CODE STUBS
+
+For EACH CICS screen / map found, generate:
+
+### Component:
+\`\`\`typescript
+// [ScreenName]Component — migrated from CICS map [MAP-NAME]
+@Component({
+  selector: 'app-[screen-name]',
+  templateUrl: './[screen-name].component.html'
+})
+export class [ScreenName]Component {
+    form: FormGroup; // fields mapped from BMS map attributes
+    // navigation matches original PF key flows
+}
+\`\`\`
+
+### Reactive Form template excerpt:
+\`\`\`html
+<!-- Fields mapped from CICS map — original field names in comments -->
+\`\`\`
+
+### Service for API calls:
+\`\`\`typescript
+@Injectable({ providedIn: 'root' })
+export class [FeatureName]Service {
+    // REST calls replacing Natural CALLNAT / Adabas READ statements
+}
+\`\`\`
+
+## SECTION 4 — VALIDATION MIGRATION
+
+List every validation found in the mainframe code and its Java/Angular equivalent:
+- Field-level validations → Jakarta Bean Validation annotations (@NotNull, @Size, @Pattern)
+- Cross-field validations → Custom Validator classes
+- Business rule validations → Service-layer guard clauses with custom exceptions
+- Reference table validations → @Service lookup with @Cacheable
+
+## SECTION 5 — DATABASE MIGRATION STRATEGY
+
+- Adabas → Relational mapping (denormalisation of MU/PE fields)
+- Liquibase migration scripts structure
+- Data validation strategy
+
+## SECTION 6 — RECOMMENDED PROJECT STRUCTURE
+
+Show the Maven/Gradle module structure and Angular workspace layout.
+
+Use actual names from the uploaded files throughout. Mark clearly where you are making assumptions due to missing context.`
+  },
+
+  obsolescence: {
+    label: 'Obsolescence',
+    hint: 'Identifies fields, programs, validations, and reference tables that may be obsolete or candidates for removal in the renovation.',
+    color: '#F85149',
+    system: `You are a mainframe code quality and modernisation analyst. Analyse ALL uploaded source files to identify everything that is a candidate for removal, consolidation, or archiving in the renovation to Java + Angular.
+
+Produce a structured Obsolescence Report:
+
+## 1. DEAD FIELDS (Candidates for Removal)
+
+Fields that are:
+- Defined in an Adabas DDM but never READ or updated in any program
+- Always hardcoded/defaulted and never business-meaningful
+- Duplicates of another field (same data, different name)
+- Legacy status fields replaced by newer patterns
+
+For each: Field Name | File/DDM | Reason | Risk | Recommendation
+
+## 2. UNUSED OR REDUNDANT PROGRAMS
+
+Programs that are:
+- Never called by any other program or CICS transaction found
+- Duplicates of another program (same logic, different name)
+- Bypassed by logic (always skipped by conditions)
+- Dead code sections within programs (unreachable code after GOTO/ESCAPE)
+
+For each: Program Name | Library | Last Evidence of Use | Risk | Recommendation
+
+## 3. OBSOLETE VALIDATIONS
+
+Validations that are:
+- Duplicate checks (same validation in multiple programs → consolidate to one service)
+- Business rules that have changed (e.g. hardcoded year 2000 logic, hardcoded values)
+- Validations against reference tables that have no remaining entries
+- Over-engineered checks that modern frameworks handle automatically (e.g. null checks Java handles with @NotNull)
+
+## 4. REFERENCE TABLE OBSOLESCENCE
+
+Reference tables / lookups that are:
+- Queried by zero or very few programs
+- Contain only a single entry (could be a constant)
+- Duplicate data already in another reference table
+- Better expressed as an enum or Spring configuration in Java
+
+## 5. TECHNICAL DEBT HOTSPOTS
+
+Code patterns that should not be migrated as-is:
+- GOTO statements and spaghetti flow → restructure as methods
+- Hardcoded literals (dates, codes, limits) → externalise to config
+- Mixed concerns (screen logic and business logic in one program) → separate into Controller + Service
+- Non-standard error handling → replace with Spring exception hierarchy
+- Performance anti-patterns (full file reads to find one record) → replace with indexed queries
+
+## 6. ESTIMATED EFFORT SAVINGS
+
+Summarise how much code can be eliminated:
+- Estimated % of fields that are obsolete
+- Estimated % of validation code that becomes framework-handled
+- Programs that can be deleted entirely
+- Consolidation opportunities (N programs → 1 service class)
+
+## RISK CLASSIFICATION
+
+Use this key throughout:
+🔴 **HIGH RISK** — Do not remove without deep investigation; may have undocumented consumers
+🟡 **MEDIUM RISK** — Review with business owner before removing  
+🟢 **LOW RISK** — Safe to remove; no evidence of active use
+
+Format as clean markdown tables with the risk classification in each row.
+Be specific about field names, program names, and line references from the uploaded files.`
+  }
+};
+
+// ─── FILE HANDLING ────────────────────────────────────────────────────────────
+function getExt(name) { return name.split('.').pop().toLowerCase(); }
+function getFileClass(ext) {
+  if (['nsp','nsn','nss','nsg'].includes(ext)) return ['nat', 'ft-nat'];
+  if (['cbl','cob','cpy','bms'].includes(ext)) return ['cob', 'ft-cob'];
+  if (['pdf'].includes(ext))                   return ['pdf', 'ft-pdf'];
+  if (['xlsx','xls','csv'].includes(ext))       return ['xls', 'ft-xls'];
+  if (['docx','doc'].includes(ext))             return ['doc', 'ft-doc'];
+  if (['png','jpg','jpeg','gif'].includes(ext)) return ['img', 'ft-img'];
+  return ['txt', 'ft-txt'];
+}
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes+'B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1)+'KB';
+  return (bytes/1048576).toFixed(1)+'MB';
+}
+
+async function processFile(file) {
+  const ext = getExt(file.name);
+  const entry = { name: file.name, ext, size: file.size, text: null, base64: null, mimeType: file.type };
+
+  if (['xlsx','xls'].includes(ext)) {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    let text = `=== Excel file: ${file.name} ===\n`;
+    wb.SheetNames.forEach(sh => {
+      const ws = wb.Sheets[sh];
+      text += `\n--- Sheet: ${sh} ---\n`;
+      text += XLSX.utils.sheet_to_csv(ws) + '\n';
+    });
+    entry.text = text;
+  } else if (['docx'].includes(ext)) {
+    const buf = await file.arrayBuffer();
+    try {
+      const res = await mammoth.extractRawText({ arrayBuffer: buf });
+      entry.text = `=== Word document: ${file.name} ===\n${res.value}`;
+    } catch(e) { entry.text = `=== Word document: ${file.name} ===\n[Could not extract text - ${e.message}]`; }
+  } else if (['pdf'].includes(ext)) {
+    const buf = await file.arrayBuffer();
+    entry.base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+    entry.mimeType = 'application/pdf';
+  } else if (['png','jpg','jpeg','gif','webp'].includes(ext)) {
+    const buf = await file.arrayBuffer();
+    entry.base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+    entry.mimeType = file.type || 'image/png';
+  } else {
+    // text-based files (Natural, COBOL, txt, csv, etc.)
+    entry.text = await file.text();
+  }
+  return entry;
+}
+
+async function addFiles(files) {
+  for (const file of files) {
+    if (state.files.some(f => f.name === file.name)) continue;
+    const entry = await processFile(file);
+    state.files.push(entry);
+  }
+  renderFileList();
+  updateUI();
+}
+
+function removeFile(name) {
+  state.files = state.files.filter(f => f.name !== name);
+  renderFileList();
+  updateUI();
+}
+
+function renderFileList() {
+  const list = document.getElementById('file-list');
+  const msg  = document.getElementById('no-files-msg');
+  document.getElementById('file-count').textContent = state.files.length;
+  if (!state.files.length) { msg.style.display = ''; list.innerHTML = ''; list.appendChild(msg); return; }
+  msg.style.display = 'none';
+  list.innerHTML = state.files.map(f => {
+    const [label, cls] = getFileClass(f.ext);
+    return `<div class="file-item">
+      <span class="file-type-badge ${cls}">${label.toUpperCase()}</span>
+      <span class="file-name" title="${f.name}">${f.name}</span>
+      <span class="file-size">${fmtSize(f.size)}</span>
+      <span class="file-remove" onclick="removeFile('${f.name}')" title="Remove">×</span>
+    </div>`;
+  }).join('');
+}
+
+// Drag & drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); addFiles([...e.dataTransfer.files]); });
+document.getElementById('file-input').addEventListener('change', e => addFiles([...e.target.files]));
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function setTab(id) {
+  state.activeTab = id;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  showOutput(state.outputs[id] || null);
+  updateUI();
+}
+
+function updateUI() {
+  const hasFiles = state.files.length > 0;
+  const btn = document.getElementById('btn-run');
+  const agent = AGENTS[state.activeTab];
+  document.getElementById('action-hint').textContent = agent ? agent.hint : '';
+  btn.disabled = state.loading;
+  btn.textContent = state.loading ? '⏳ Running…' : `▶ Run ${agent?.label || 'Agent'}`;
+  document.getElementById('btn-copy').disabled = !state.outputs[state.activeTab];
+  document.getElementById('btn-dl-tab').disabled = !state.outputs[state.activeTab];
+}
+
+// ─── OUTPUT RENDERING ─────────────────────────────────────────────────────────
+function showOutput(md) {
+  const empty   = document.getElementById('empty-state');
+  const content = document.getElementById('output-content');
+  if (!md) { empty.style.display = 'flex'; content.style.display = 'none'; return; }
+  empty.style.display = 'none';
+  content.style.display = 'block';
+  content.innerHTML = marked.parse(md);
+  // If diagram tab, also try to render mermaid blocks
+  if (state.activeTab === 'diagram') {
+    renderMermaidBlocks(content);
+  }
+}
+
+async function renderMermaidBlocks(container) {
+  if (!window._mermaid) return;
+  const pres = container.querySelectorAll('pre code.language-mermaid, pre code');
+  for (const el of pres) {
+    const src = el.textContent.trim();
+    if (!src.match(/^(graph|flowchart|sequenceDiagram|erDiagram|classDiagram)/i)) continue;
+    try {
+      const id = 'mermaid-' + Math.random().toString(36).slice(2);
+      const { svg } = await window._mermaid.render(id, src);
+      const wrap = document.createElement('div');
+      wrap.className = 'mermaid-container';
+      wrap.style.cssText = 'background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:16px;margin:10px 0;overflow-x:auto;';
+      wrap.innerHTML = svg;
+      const srcDiv = document.createElement('div');
+      srcDiv.className = 'mermaid-src';
+      srcDiv.textContent = src;
+      el.closest('pre').replaceWith(wrap);
+    } catch(e) { /* keep as code block */ }
+  }
+}
+
+// ─── AGENT CALL ───────────────────────────────────────────────────────────────
+async function runAgent() {
+  if (state.loading) return;
+  const agent = AGENTS[state.activeTab];
+  if (!agent) return;
+
+  state.loading = true;
+  updateUI();
+
+  // Build message content parts
+  const userParts = [];
+
+  // Add all text-based files
+  const textFiles = state.files.filter(f => f.text);
+  if (textFiles.length) {
+    let block = `The following ${textFiles.length} file(s) have been uploaded for analysis:\n\n`;
+    textFiles.forEach(f => {
+      block += `${'='.repeat(60)}\nFILE: ${f.name} (${fmtSize(f.size)})\n${'='.repeat(60)}\n${f.text.slice(0, 30000)}\n\n`;
+    });
+    userParts.push({ type: 'text', text: block });
+  }
+
+  // Add binary files (PDF, images)
+  const binaryFiles = state.files.filter(f => f.base64);
+  binaryFiles.forEach(f => {
+    if (f.mimeType === 'application/pdf') {
+      userParts.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: f.base64 }, title: f.name });
+    } else if (f.mimeType.startsWith('image/')) {
+      userParts.push({ type: 'image', source: { type: 'base64', media_type: f.mimeType, data: f.base64 } });
+    }
+  });
+
+  if (!textFiles.length && !binaryFiles.length) {
+    userParts.push({ type: 'text', text: 'No files have been uploaded yet. Please describe what a typical mainframe system with Natural/COBOL, CICS, and Adabas would look like for this analysis.' });
+  }
+
+  userParts.push({ type: 'text', text: `Please run the ${agent.label} analysis now. Produce a thorough, structured, professional report using markdown formatting. Be specific, detailed, and actionable.` });
+
+  // Show loading state
+  const empty = document.getElementById('empty-state');
+  const content = document.getElementById('output-content');
+  empty.style.display = 'none';
+  content.style.display = 'block';
+  content.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:16px 0;color:var(--muted)">
+    <div class="spinner"></div>
+    <span>${agent.label} agent running — streaming response…</span>
+  </div><div id="stream-out" class="stream-cursor" style="line-height:1.8;white-space:pre-wrap;font-size:13px;color:var(--text)"></div>`;
+
+  const streamOut = document.getElementById('stream-out');
+  let accumulated = '';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        system: agent.system,
+        stream: true,
+        messages: [{ role: 'user', content: userParts }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+            accumulated += parsed.delta.text;
+            streamOut.textContent = accumulated;
+          }
+        } catch(e) {}
+      }
+    }
+
+    streamOut.classList.remove('stream-cursor');
+    state.outputs[state.activeTab] = accumulated;
+    showOutput(accumulated);
+
+  } catch(err) {
+    content.innerHTML = `<div style="color:var(--red);padding:16px 0">
+      <strong>Error running agent:</strong> ${err.message}<br>
+      <small style="color:var(--muted)">Make sure you are using this artifact within Claude.ai where the API key is handled automatically.</small>
+    </div>`;
+  }
+
+  state.loading = false;
+  updateUI();
+}
+
+// ─── COPY & DOWNLOAD ──────────────────────────────────────────────────────────
+function copyOutput() {
+  const md = state.outputs[state.activeTab];
+  if (md) { navigator.clipboard.writeText(md); }
+}
+
+function downloadTab() {
+  const md = state.outputs[state.activeTab];
+  const agent = AGENTS[state.activeTab];
+  if (!md || !agent) return;
+  const filename = `${agent.label.toLowerCase().replace(/[^a-z0-9]+/g,'-')}.md`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+async function downloadAllZip() {
+  const zip = new JSZip();
+  const proj = document.getElementById('project-name').value || 'mainframe-renovation';
+  const folder = zip.folder(proj);
+
+  const tabMeta = {
+    analyse:      { file: '01-code-analysis.md',      label: 'Code Analysis' },
+    brd:          { file: '02-brd-frd.md',             label: 'BRD and FRD' },
+    jira:         { file: '03-jira-stories.md',        label: 'Jira Stories' },
+    diagram:      { file: '04-mermaid-diagrams.mmd',   label: 'Mermaid Diagrams' },
+    renovation:   { file: '05-java-angular-guide.md',  label: 'Java Angular Guide' },
+    obsolescence: { file: '06-obsolescence-report.md', label: 'Obsolescence Report' }
+  };
+
+  let readme = `# ${proj}\n\nGenerated by Mainframe Renovation Workbench\nDate: ${new Date().toISOString().slice(0,10)}\n\n## Contents\n\n`;
+  let hasAny = false;
+
+  Object.entries(tabMeta).forEach(([tab, meta]) => {
+    const content = state.outputs[tab];
+    if (content) {
+      folder.file(meta.file, content);
+      readme += `- \`${meta.file}\` — ${meta.label}\n`;
+      hasAny = true;
+    }
+  });
+
+  if (!hasAny) {
+    alert('No agent outputs yet — run at least one agent first.');
+    return;
+  }
+
+  readme += `\n## File Inventory\n\n${state.files.map(f => `- ${f.name} (${fmtSize(f.size)})`).join('\n')}`;
+  folder.file('README.md', readme);
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = proj.replace(/[^a-z0-9-_]/gi,'_') + '-renovation.zip';
+  a.click();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderFileList();
+updateUI();
+marked.setOptions({ gfm: true, breaks: true });
+</script>
+
+</body>
+</html>
