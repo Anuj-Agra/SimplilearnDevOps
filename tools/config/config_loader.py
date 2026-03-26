@@ -21,6 +21,51 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+
+# ─── Model resolution ─────────────────────────────────────────────────────────
+
+# Hard-coded fallback preference order — updated when a new Sonnet/Opus ships.
+# The resolver tries the Anthropic API first; this list is only used offline.
+_FALLBACK_MODELS = [
+    "claude-sonnet-4-5",
+    "claude-opus-4-5",
+    "claude-sonnet-4-20250514",
+    "claude-3-7-sonnet-20250219",
+    "claude-3-5-sonnet-20241022",
+]
+
+def resolve_latest_model() -> str:
+    """
+    Ask the Anthropic API for the newest available model and return its id.
+    Prefers the most-recent Sonnet or Opus; skips Haiku.
+    Falls back silently to the first entry in _FALLBACK_MODELS if the API
+    call fails (no key set, network error, etc.).
+    """
+    try:
+        import anthropic as _anthropic
+        client = _anthropic.Anthropic()
+        models = client.models.list()
+        # models.data is a list of Model objects sorted by created desc (newest first)
+        candidates = [
+            m for m in models.data
+            if "haiku" not in m.id.lower()          # skip Haiku — prefer Sonnet/Opus
+            and ("sonnet" in m.id.lower() or "opus" in m.id.lower())
+        ]
+        if candidates:
+            chosen = candidates[0].id
+            logger.info("Latest model resolved via API: %s", chosen)
+            return chosen
+    except Exception as exc:
+        logger.debug("Model auto-resolve failed (%s); using fallback", exc)
+    logger.info("Using fallback model: %s", _FALLBACK_MODELS[0])
+    return _FALLBACK_MODELS[0]
+
+
+# Token budget: generous enough for complex flows, tight enough to stay fast.
+# 6 000 tokens covers the rule JSON + dependency summaries for all but the
+# most deeply interconnected flows.  No user override needed.
+DEFAULT_TOKEN_BUDGET = 6_000
+
 # ─── Data classes ─────────────────────────────────────────────────────────────
 
 @dataclass
@@ -51,12 +96,22 @@ class AnalysisConfig:
     hierarchy:            list[AppConfig]
     root_casetype:        Optional[str]
     role:                 str
-    model:                str
     max_rules_per_session: int
-    token_budget_per_rule: int
     workspace:            Path
     rule_type_filter:     dict[str, bool]
     bin_extraction:       BinExtractionConfig
+    # Model and token budget are always auto-resolved at runtime —
+    # not stored in config or passed by the user.
+    _model:               str = ""    # set by load_config() after API call
+    _token_budget:        int = DEFAULT_TOKEN_BUDGET
+
+    @property
+    def model(self) -> str:
+        return self._model or resolve_latest_model()
+
+    @property
+    def token_budget_per_rule(self) -> int:
+        return self._token_budget
 
     # ── Derived helpers ───────────────────────────────────────────────────────
 
@@ -159,13 +214,15 @@ def load_config(config_path: Path) -> AnalysisConfig:
         hierarchy             = apps,
         root_casetype         = an.get("root_casetype") or None,
         role                  = role,
-        model                 = str(an.get("model", "claude-sonnet-4-20250514")),
         max_rules_per_session = int(an.get("max_rules_per_session", 50)),
-        token_budget_per_rule = int(an.get("token_budget_per_rule", 6000)),
         workspace             = workspace,
         rule_type_filter      = rule_filter,
         bin_extraction        = bin_cfg,
+        _model                = resolve_latest_model(),
+        _token_budget         = DEFAULT_TOKEN_BUDGET,
     )
+
+    logger.info("Model: %s  |  Token budget: %d per rule", cfg._model, cfg._token_budget)
 
     _warn_missing_manifests(cfg)
     return cfg
