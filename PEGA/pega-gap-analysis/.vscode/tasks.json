@@ -1,0 +1,61 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "GAP: Open Bridge Orchestrator",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/ORCHESTRATOR-BRIDGE.md"],
+      "problemMatcher": []
+    },
+    {
+      "label": "GAP: Open Task List",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/workspace/GAP-TASK-LIST.md"],
+      "problemMatcher": []
+    },
+    {
+      "label": "GAP: Open Bridge Config",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/config/bridge-config.md"],
+      "problemMatcher": []
+    },
+    {
+      "label": "GAP: Agent 10 - Source Indexer",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/agents/10-source-indexer.md"],
+      "problemMatcher": []
+    },
+    {
+      "label": "GAP: Agent 11 - Target Scanner",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/agents/11-target-scanner.md"],
+      "problemMatcher": []
+    },
+    {
+      "label": "GAP: Agent 12 - Requirement Mapper",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/agents/12-requirement-mapper.md"],
+      "problemMatcher": []
+    },
+    {
+      "label": "GAP: Agent 13 - Gap Detector",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/agents/13-gap-detector.md"],
+      "problemMatcher": []
+    },
+    {
+      "label": "GAP: Agent 14+15 - Impact Assessor & Report",
+      "type": "shell",
+      "command": "code",
+      "args": ["${workspaceFolder}/pega-gap-analysis/agents/14-impact-assessor-and-15-report-generator.md"],
+      "problemMatcher": []
+    }
+  ]
+}

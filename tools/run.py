@@ -163,9 +163,7 @@ def cmd_analyse(args):
             workspace         = workspace,
             rules_dir         = rules_dir,
             root_casetype     = getattr(args, "root_casetype", None),
-            model             = getattr(args, "model", "claude-sonnet-4-20250514"),
             max_rules_per_session = max_rules,
-            token_budget_per_rule = getattr(args, "token_budget", 6000),
             skill_files       = DEFAULT_SKILLS,
             role_adapter_path = ROLE_ADAPTERS.get(role),
             dry_run           = args.dry_run,
@@ -400,15 +398,13 @@ def main():
     # ── analyse ───────────────────────────────────────────────────────────────
     p_an = sub.add_parser("analyse", help="Run recursive analysis (or resume)")
     _add_config_or_rules_dir(p_an)
-    p_an.add_argument("--role",         default=None, choices=["ba","po","dev","qa"])
-    p_an.add_argument("--model",        default="claude-sonnet-4-20250514")
-    p_an.add_argument("--max-rules",    type=int, default=50,
+    p_an.add_argument("--role",      default=None, choices=["ba","po","dev","qa"],
+                      help="Output audience: ba (default), po, dev, qa")
+    p_an.add_argument("--max-rules", type=int, default=50,
                       help="Max rules per session (default 50)")
-    p_an.add_argument("--token-budget", type=int, default=6000,
-                      help="Input token budget per LLM call (default 6000)")
-    p_an.add_argument("--reset",        action="store_true",
+    p_an.add_argument("--reset",     action="store_true",
                       help="Rebuild graph and restart from scratch")
-    p_an.add_argument("--dry-run",      action="store_true",
+    p_an.add_argument("--dry-run",   action="store_true",
                       help="Build graph only — no LLM calls")
     p_an.set_defaults(func=cmd_analyse)
 
