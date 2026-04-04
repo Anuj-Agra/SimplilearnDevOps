@@ -1,0 +1,132 @@
+{
+  "programs": [
+    {
+      "id": "prog-alpha",
+      "name": "Program Alpha — Core Platform Renovation",
+      "color": "#1D9E75",
+      "workstreams": [
+        {
+          "id": "ws-a1",
+          "name": "Infrastructure Modernization",
+          "milestones": [
+            { "id": "m-a1-1", "name": "Architecture Review Complete",  "start": "2025-01-06", "end": "2025-02-14", "status": "done",    "rag": "G" },
+            { "id": "m-a1-2", "name": "Cloud Environment Provisioned", "start": "2025-02-17", "end": "2025-03-28", "status": "done",    "rag": "G" },
+            { "id": "m-a1-3", "name": "Data Migration — Phase 1",      "start": "2025-03-31", "end": "2025-06-27", "status": "active",  "rag": "A" },
+            { "id": "m-a1-4", "name": "Data Migration — Phase 2",      "start": "2025-06-30", "end": "2025-09-26", "status": "planned", "rag": "G" },
+            { "id": "m-a1-5", "name": "Cutover & Hypercare",           "start": "2025-09-29", "end": "2025-10-31", "status": "planned", "rag": "G" }
+          ]
+        },
+        {
+          "id": "ws-a2",
+          "name": "Application Re-platforming",
+          "milestones": [
+            { "id": "m-a2-1", "name": "API Gateway Design",             "start": "2025-01-13", "end": "2025-02-28", "status": "done",    "rag": "G" },
+            { "id": "m-a2-2", "name": "Microservices — Batch 1",        "start": "2025-03-03", "end": "2025-05-30", "status": "active",  "rag": "G" },
+            { "id": "m-a2-3", "name": "Microservices — Batch 2",        "start": "2025-06-02", "end": "2025-08-29", "status": "planned", "rag": "G" },
+            { "id": "m-a2-4", "name": "Integration Testing",            "start": "2025-09-01", "end": "2025-09-26", "status": "planned", "rag": "G" },
+            { "id": "m-a2-5", "name": "UAT & Sign-off",                 "start": "2025-09-29", "end": "2025-10-17", "status": "planned", "rag": "G" }
+          ]
+        },
+        {
+          "id": "ws-a3",
+          "name": "Data Governance & Quality",
+          "milestones": [
+            { "id": "m-a3-1", "name": "Data Dictionary Published",      "start": "2025-02-03", "end": "2025-03-14", "status": "done",    "rag": "G" },
+            { "id": "m-a3-2", "name": "DQ Rules Engine — v1",           "start": "2025-03-17", "end": "2025-05-16", "status": "active",  "rag": "R" },
+            { "id": "m-a3-3", "name": "Golden Record Framework",        "start": "2025-05-19", "end": "2025-07-25", "status": "planned", "rag": "A" },
+            { "id": "m-a3-4", "name": "Regulatory Validation (KYC)",    "start": "2025-07-28", "end": "2025-09-19", "status": "planned", "rag": "G" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prog-beta",
+      "name": "Program Beta — Client Data Modernization",
+      "color": "#7F77DD",
+      "workstreams": [
+        {
+          "id": "ws-b1",
+          "name": "MDM Implementation",
+          "milestones": [
+            { "id": "m-b1-1", "name": "Vendor Selection",               "start": "2025-01-06", "end": "2025-02-07", "status": "done",    "rag": "G" },
+            { "id": "m-b1-2", "name": "MDM Platform Setup",             "start": "2025-02-10", "end": "2025-04-25", "status": "active",  "rag": "A" },
+            { "id": "m-b1-3", "name": "Entity Resolution — Phase 1",    "start": "2025-04-28", "end": "2025-07-25", "status": "planned", "rag": "G" },
+            { "id": "m-b1-4", "name": "Entity Resolution — Phase 2",    "start": "2025-07-28", "end": "2025-10-17", "status": "planned", "rag": "G" },
+            { "id": "m-b1-5", "name": "Production Go-Live",             "start": "2025-10-20", "end": "2025-11-14", "status": "planned", "rag": "G" }
+          ]
+        },
+        {
+          "id": "ws-b2",
+          "name": "Regulatory Compliance (MiFID II / GDPR)",
+          "milestones": [
+            { "id": "m-b2-1", "name": "Gap Analysis Complete",          "start": "2025-01-13", "end": "2025-02-28", "status": "done",    "rag": "G" },
+            { "id": "m-b2-2", "name": "Controls Design",                "start": "2025-03-03", "end": "2025-05-02", "status": "active",  "rag": "G" },
+            { "id": "m-b2-3", "name": "Controls Implementation",        "start": "2025-05-05", "end": "2025-08-01", "status": "planned", "rag": "G" },
+            { "id": "m-b2-4", "name": "Audit & Certification",          "start": "2025-08-04", "end": "2025-09-26", "status": "planned", "rag": "A" }
+          ]
+        },
+        {
+          "id": "ws-b3",
+          "name": "UI / Consumer Applications",
+          "milestones": [
+            { "id": "m-b3-1", "name": "UX Research & Prototyping",      "start": "2025-02-03", "end": "2025-03-21", "status": "done",    "rag": "G" },
+            { "id": "m-b3-2", "name": "Angular Frontend — Sprint 1–3",  "start": "2025-03-24", "end": "2025-06-13", "status": "active",  "rag": "G" },
+            { "id": "m-b3-3", "name": "Angular Frontend — Sprint 4–6",  "start": "2025-06-16", "end": "2025-09-05", "status": "planned", "rag": "G" },
+            { "id": "m-b3-4", "name": "End-to-End Testing",             "start": "2025-09-08", "end": "2025-10-03", "status": "planned", "rag": "G" },
+            { "id": "m-b3-5", "name": "UAT & Business Sign-off",        "start": "2025-10-06", "end": "2025-10-31", "status": "planned", "rag": "G" }
+          ]
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "dep-01",
+      "from_milestone": "m-a1-3",
+      "to_milestone":   "m-b1-3",
+      "type": "Finish-to-Start",
+      "description": "Phase 1 data migration must complete before entity resolution can begin.",
+      "rag": "A"
+    },
+    {
+      "id": "dep-02",
+      "from_milestone": "m-a2-2",
+      "to_milestone":   "m-b3-2",
+      "type": "Start-to-Start",
+      "description": "API Gateway must be available for UI integration sprints.",
+      "rag": "G"
+    },
+    {
+      "id": "dep-03",
+      "from_milestone": "m-a3-2",
+      "to_milestone":   "m-b2-3",
+      "type": "Finish-to-Start",
+      "description": "DQ Rules Engine must be live before compliance controls can be implemented.",
+      "rag": "R"
+    },
+    {
+      "id": "dep-04",
+      "from_milestone": "m-b1-4",
+      "to_milestone":   "m-b3-4",
+      "type": "Finish-to-Start",
+      "description": "Entity Resolution Phase 2 required before end-to-end test coverage is complete.",
+      "rag": "G"
+    },
+    {
+      "id": "dep-05",
+      "from_milestone": "m-a1-4",
+      "to_milestone":   "m-a2-4",
+      "type": "Finish-to-Start",
+      "description": "Data Migration Phase 2 must complete before integration testing begins.",
+      "rag": "G"
+    },
+    {
+      "id": "dep-06",
+      "from_milestone": "m-a3-3",
+      "to_milestone":   "m-b1-3",
+      "type": "Start-to-Start",
+      "description": "Golden Record framework design feeds into entity resolution logic.",
+      "rag": "A"
+    }
+  ]
+}
