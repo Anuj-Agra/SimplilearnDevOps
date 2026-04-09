@@ -1,0 +1,95 @@
+{
+  "workflowVersion": "1.0",
+  "globalConfig": {
+    "graphFile": "graph/repo-graph.json",
+    "graphHtml": "graph/repo-graph.html",
+    "outputDirs": {
+      "frd": "docs/frd",
+      "specs": "docs/specs",
+      "gapReports": "docs/gap-reports",
+      "tests": "tests",
+      "graph": "graph"
+    },
+    "tokenBudget": {
+      "graphProjectionTarget": 5000,
+      "fullGraphWarningThreshold": 25000,
+      "codeReadMaxLinesPerFile": 50
+    }
+  },
+  "triggerPhrases": {
+    "repo-graph-architect": [
+      "graph my repo",
+      "build the graph",
+      "scan my project",
+      "dependency tree",
+      "module hierarchy",
+      "visualize my project",
+      "map my modules",
+      "reverse engineer my codebase"
+    ],
+    "graph-intelligence-suite": [
+      "what depends on",
+      "blast radius",
+      "use the graph",
+      "from the graph",
+      "what calls",
+      "trace this",
+      "API performance",
+      "chatty service",
+      "circular dependencies",
+      "dead modules",
+      "most critical module"
+    ],
+    "functional-spec-generator": [
+      "create FRD",
+      "write functional spec",
+      "document the system",
+      "generate requirements",
+      "user stories",
+      "business rules",
+      "what does this do",
+      "document this module"
+    ],
+    "persona-suite": {
+      "po":            ["act as PO", "product owner view", "non-technical review", "user perspective"],
+      "ba":            ["act as BA", "business analyst", "requirements review", "process flow"],
+      "architect":     ["act as architect", "technical review", "architecture analysis", "coupling"],
+      "developer":     ["act as developer", "implementation analysis", "developer view", "how to build"],
+      "test-architect":["act as test architect", "test strategy", "QA review", "test cases"],
+      "all":           ["round table", "all personas", "360 review", "full review"]
+    },
+    "playwright-test-generator": [
+      "write playwright tests",
+      "generate tests",
+      "E2E tests",
+      "UI automation",
+      "API tests",
+      "test suite",
+      "automated tests",
+      "test this feature"
+    ],
+    "gap-detector": {
+      "all":          ["find gaps", "what will break", "full gap analysis", "production risks"],
+      "functional":   ["functional gaps", "missing journeys", "incomplete flows"],
+      "technical":    ["technical gaps", "integration issues", "broken contracts"],
+      "scenario":     ["edge cases", "what crashes production", "scenario gaps", "boundary testing"],
+      "performance":  ["performance gaps", "bottlenecks", "N+1", "pagination issues", "slow APIs"]
+    }
+  },
+  "skillDependencyGraph": {
+    "repo-graph-architect": [],
+    "graph-intelligence-suite": ["repo-graph-architect"],
+    "functional-spec-generator": [],
+    "persona-suite": [],
+    "playwright-test-generator": [],
+    "gap-detector": []
+  },
+  "recommendedSkillOrder": [
+    "repo-graph-architect",
+    "functional-spec-generator",
+    "graph-intelligence-suite",
+    "persona-suite",
+    "gap-detector",
+    "playwright-test-generator"
+  ]
+}
