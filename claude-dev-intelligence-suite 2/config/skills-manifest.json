@@ -1,0 +1,109 @@
+{
+  "manifestVersion": "2.0",
+  "suiteName": "Dev Intelligence Suite",
+  "suiteVersion": "2.0.0",
+  "totalSkills": 36,
+  "description": "Complete AI-powered SDLC intelligence suite for Java/Angular mono-repos.",
+  "skillGroups": [
+    {
+      "group": "Foundation",
+      "skills": [
+        { "id": "repo-graph-architect",   "order": 1,  "phase": "discovery",     "triggers": ["graph my repo","scan my project","dependency tree"] },
+        { "id": "graph-intelligence-suite","order": 2,  "phase": "analysis",     "triggers": ["what depends on","blast radius","use the graph"] }
+      ]
+    },
+    {
+      "group": "Documentation",
+      "skills": [
+        { "id": "functional-spec-generator","order": 3,  "phase": "requirements", "triggers": ["create FRD","write functional spec","user stories from code"] },
+        { "id": "api-contract-generator",  "order": 4,  "phase": "requirements", "triggers": ["OpenAPI spec","swagger","API contract","openapi.yaml"] },
+        { "id": "db-schema-reverse-engineer","order": 5, "phase": "requirements", "triggers": ["data model","ER diagram","entity relationships"] },
+        { "id": "release-notes-generator", "order": 6,  "phase": "delivery",     "triggers": ["release notes","changelog","what changed"] },
+        { "id": "jira-ticket-generator",   "order": 7,  "phase": "planning",     "triggers": ["create Jira tickets","backlog items","acceptance criteria"] }
+      ]
+    },
+    {
+      "group": "Review Personas",
+      "skills": [
+        { "id": "persona-suite",           "order": 8,  "phase": "review",       "triggers": ["act as PO","act as BA","act as architect","round-table review"] }
+      ]
+    },
+    {
+      "group": "Security & Compliance",
+      "skills": [
+        { "id": "security-audit",          "order": 9,  "phase": "security",     "triggers": ["security audit","OWASP","vulnerabilities","injection risk"] },
+        { "id": "gdpr-compliance-scanner", "order": 10, "phase": "compliance",   "triggers": ["GDPR","PII mapping","Article 30","KYC audit","AML"] },
+        { "id": "data-lineage-mapper",     "order": 11, "phase": "compliance",   "triggers": ["data lineage","trace this field","where does X go"] },
+        { "id": "dependency-risk-tracker", "order": 12, "phase": "security",     "triggers": ["dependency audit","CVE scan","outdated libraries","licence check"] }
+      ]
+    },
+    {
+      "group": "Architecture & Migration",
+      "skills": [
+        { "id": "migration-planner",       "order": 13, "phase": "architecture", "triggers": ["migration plan","modernisation roadmap","phased migration"] },
+        { "id": "dead-code-eliminator",    "order": 14, "phase": "architecture", "triggers": ["remove dead code","decommission","safe to remove"] },
+        { "id": "change-impact-analyser",  "order": 15, "phase": "architecture", "triggers": ["impact of this change","regression scope","what breaks"] }
+      ]
+    },
+    {
+      "group": "Concurrency & Resilience",
+      "skills": [
+        { "id": "concurrency-hazard-scanner","order": 16,"phase": "resilience",  "triggers": ["race conditions","thread safety","shared mutable state"] },
+        { "id": "reactive-migration-advisor","order": 17,"phase": "scalability", "triggers": ["migrate to reactive","WebFlux","non-blocking","Project Reactor"] },
+        { "id": "circuit-breaker-auditor", "order": 18, "phase": "resilience",  "triggers": ["circuit breaker","cascading failure","Resilience4j"] },
+        { "id": "retry-storm-detector",    "order": 19, "phase": "resilience",  "triggers": ["retry storm","exponential backoff","retry jitter"] },
+        { "id": "graceful-degradation-planner","order": 20,"phase": "resilience","triggers": ["graceful degradation","fallback strategy","degraded mode"] },
+        { "id": "timeout-bulkhead-auditor","order": 21, "phase": "resilience",  "triggers": ["missing timeouts","bulkhead","thread pool isolation"] },
+        { "id": "distributed-lock-auditor","order": 22, "phase": "scalability", "triggers": ["distributed lock","horizontal scaling","scheduled job every instance"] }
+      ]
+    },
+    {
+      "group": "Connection & Queue Management",
+      "skills": [
+        { "id": "connection-pool-analyser","order": 23, "phase": "scalability",  "triggers": ["connection pool","HikariCP","pool sizing","pool exhaustion"] },
+        { "id": "backpressure-queue-analyser","order": 24,"phase": "scalability","triggers": ["back pressure","Kafka","dead letter queue","consumer lag"] }
+      ]
+    },
+    {
+      "group": "Observability",
+      "skills": [
+        { "id": "observability-gap-detector","order": 25,"phase": "observability","triggers": ["observability gaps","missing metrics","structured logging","tracing"] },
+        { "id": "correlation-id-auditor",  "order": 26, "phase": "observability","triggers": ["correlation ID","trace propagation","MDC propagation"] },
+        { "id": "slo-sla-generator",       "order": 27, "phase": "observability","triggers": ["SLO","SLA","latency targets","error budget","alerting rules"] }
+      ]
+    },
+    {
+      "group": "API Design",
+      "skills": [
+        { "id": "api-versioning-auditor",  "order": 28, "phase": "api-design",  "triggers": ["API versioning","breaking changes","backward compatibility"] },
+        { "id": "idempotency-scanner",     "order": 29, "phase": "api-design",  "triggers": ["idempotency","duplicate requests","double submit","retry-safe"] },
+        { "id": "rate-limiter-auditor",    "order": 30, "phase": "api-design",  "triggers": ["rate limiting","throttling","Bucket4j","too many requests"] }
+      ]
+    },
+    {
+      "group": "Performance & Caching",
+      "skills": [
+        { "id": "cache-strategy-generator","order": 31, "phase": "performance", "triggers": ["caching strategy","what to cache","Redis cache","TTL config","thundering herd"] },
+        { "id": "latency-budget-decomposer","order": 32,"phase": "performance", "triggers": ["latency budget","where is time spent","call chain latency"] },
+        { "id": "load-test-generator",     "order": 33, "phase": "performance", "triggers": ["load tests","Gatling","k6","stress test","spike test","concurrent users"] }
+      ]
+    },
+    {
+      "group": "Testing & Delivery",
+      "skills": [
+        { "id": "playwright-test-generator","order": 34,"phase": "testing",     "triggers": ["playwright tests","E2E tests","UI automation","API tests"] },
+        { "id": "gap-detector",            "order": 35, "phase": "validation",  "triggers": ["find gaps","what will break","production risks","edge cases"] },
+        { "id": "cicd-pipeline-auditor",   "order": 36, "phase": "delivery",   "triggers": ["audit my pipeline","CI/CD review","pipeline gaps","deployment risks"] }
+      ]
+    }
+  ],
+  "recommendedWorkflows": [
+    { "name": "Full Discovery",          "time": "Half day", "steps": ["repo-graph-architect","functional-spec-generator","security-audit","persona-suite","gap-detector"] },
+    { "name": "Pre-Release Risk Review", "time": "2 hours",  "steps": ["change-impact-analyser","gap-detector","concurrency-hazard-scanner","cicd-pipeline-auditor"] },
+    { "name": "Scalability Readiness",   "time": "3 hours",  "steps": ["concurrency-hazard-scanner","connection-pool-analyser","circuit-breaker-auditor","timeout-bulkhead-auditor","retry-storm-detector","load-test-generator"] },
+    { "name": "Compliance Audit",        "time": "2 hours",  "steps": ["gdpr-compliance-scanner","data-lineage-mapper","security-audit","dependency-risk-tracker"] },
+    { "name": "API Design Review",       "time": "1 hour",   "steps": ["api-contract-generator","api-versioning-auditor","idempotency-scanner","rate-limiter-auditor"] },
+    { "name": "Sprint Module Prep",      "time": "1-2 hours","steps": ["graph-intelligence-suite","functional-spec-generator","jira-ticket-generator","playwright-test-generator","gap-detector"] },
+    { "name": "Mainframe Migration",     "time": "Half day", "steps": ["repo-graph-architect","migration-planner","dead-code-eliminator","change-impact-analyser","persona-suite"] }
+  ]
+}

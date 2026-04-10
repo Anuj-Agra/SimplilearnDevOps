@@ -1,0 +1,58 @@
+{
+  "chat.instructionsFilesLocations": [
+    ".github/instructions",
+    ".claude/skills"
+  ],
+
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".github/copilot-instructions.md"
+    }
+  ],
+
+  "github.copilot.chat.testGeneration.instructions": [
+    {
+      "text": "Always load .claude/skills/playwright-test-generator/SKILL.md before generating tests. Use JUnit 5 + Mockito + AssertJ for Java. Use Playwright with Page Object Model for UI. Follow the test patterns in .claude/skills/playwright-test-generator/references/."
+    }
+  ],
+
+  "github.copilot.chat.reviewSelection.instructions": [
+    {
+      "text": "When reviewing code, check against .claude/skills/code-smell-detector/SKILL.md patterns. Flag God classes, long methods, missing @Transactional, thread safety issues, and N+1 risks."
+    }
+  ],
+
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Generate commit messages in the format: type(scope): description. Types: feat, fix, refactor, test, docs, chore, perf, security. Reference the skill used if applicable (e.g. 'refactor(orders): extract OrderValidationService [interactive-refactoring-agent]')."
+    }
+  ],
+
+  "chat.agent.maxRequests": 100,
+
+  "github.copilot.enable": {
+    "*": true
+  },
+
+  "github.copilot.chat.localeOverride": "en",
+
+  "files.associations": {
+    "*.instructions.md": "markdown",
+    "AGENTS.md": "markdown",
+    "SKILL.md": "markdown"
+  },
+
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/target": true,
+    "**/.git": true,
+    "graph/repo-graph.json": false
+  },
+
+  "github.copilot.chat.experimental.agentSkills": true
+}

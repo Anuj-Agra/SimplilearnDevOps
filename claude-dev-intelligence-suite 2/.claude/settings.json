@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "projectName": "Dev Intelligence Suite",
+  "description": "Full-stack intelligence suite for Java/Angular mono-repos: graph analysis, FRD generation, persona reviews, Playwright test generation, and gap detection.",
+  "skills": [
+    {
+      "name": "repo-graph-architect",
+      "path": ".claude/skills/repo-graph-architect",
+      "enabled": true,
+      "description": "Scan mono-repo, build hierarchical dependency graph, emit repo-graph.json + interactive HTML visualiser."
+    },
+    {
+      "name": "graph-intelligence-suite",
+      "path": ".claude/skills/graph-intelligence-suite",
+      "enabled": true,
+      "description": "Three agents consuming repo-graph.json: Q&A, FRD generation, API performance analysis."
+    },
+    {
+      "name": "functional-spec-generator",
+      "path": ".claude/skills/functional-spec-generator",
+      "enabled": true,
+      "description": "Generate a 10-section non-technical FRD from Java/Angular code. Graph-accelerated when repo-graph.json is present."
+    },
+    {
+      "name": "persona-suite",
+      "path": ".claude/skills/persona-suite",
+      "enabled": true,
+      "description": "Five expert personas: Product Owner, Business Analyst, Technical Architect, Developer, Test Architect."
+    },
+    {
+      "name": "playwright-test-generator",
+      "path": ".claude/skills/playwright-test-generator",
+      "enabled": true,
+      "description": "Generate full Playwright test suites: Angular UI tests (Page Object Model) + Java API tests."
+    },
+    {
+      "name": "gap-detector",
+      "path": ".claude/skills/gap-detector",
+      "enabled": true,
+      "description": "Four-engine gap detector: functional, technical, scenario (production-breaking), and performance gaps."
+    }
+  ],
+  "defaultWorkflow": "graph-first",
+  "sharedArtifacts": {
+    "graphFile": "graph/repo-graph.json",
+    "graphHtml": "graph/repo-graph.html",
+    "frdOutputDir": "docs/frd",
+    "testOutputDir": "tests",
+    "gapReportDir": "docs/gap-reports"
+  }
+}
