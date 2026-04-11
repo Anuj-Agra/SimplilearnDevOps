@@ -1,0 +1,27 @@
+# PREA — Python Dependencies
+# Install with: pip install -r requirements.txt --break-system-packages
+
+# ── Core (required) ──────────────────────────────────────────────────────────
+lxml>=4.9.0             # Faster, more robust XML parsing for binary payloads
+tqdm>=4.65.0            # Progress bars during batch extraction
+
+# ── Graph & Analysis ─────────────────────────────────────────────────────────
+networkx>=3.1           # Rule dependency graph algorithms (PageRank, cycles, etc.)
+
+# ── AI / FRD Generation ──────────────────────────────────────────────────────
+anthropic>=0.25.0       # Claude API for AI-generated FRD sections
+
+# ── Excel Output (Decommission Scorecard) ────────────────────────────────────
+openpyxl>=3.1.0         # Write .xlsx decommission scorecard
+
+# ── Optional: Enhanced Binary Parsing ───────────────────────────────────────
+# construct>=2.10.0     # Declarative binary format parsing (for deep legacy format work)
+# pyjavaobj>=0.4.3      # Full Java serialised object parsing
+
+# ── Dev / Testing ────────────────────────────────────────────────────────────
+pytest>=7.4.0           # Unit tests
+pytest-cov>=4.1.0       # Coverage reporting
+
+# ── Node.js (for DOCX generation) ────────────────────────────────────────────
+# Install separately: npm install -g docx
+# Verify: node -e "require('docx'); console.log('ok')"

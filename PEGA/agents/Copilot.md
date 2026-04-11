@@ -241,7 +241,7 @@ Agent reads VIPContacts (Excel) → confirms VIP
         ↓
 Creates task in Planner (active board)
         ↓
-Logs row in Tasks sheet (Excel) ← permanent record
+Logs row in Tasks sheet (Excel) ← permanent record q
         ↓
 Creates page in OneNote ← context + notes
         ↓

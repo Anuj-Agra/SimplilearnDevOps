@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MFREA — Mainframe Reverse Engineering Viewer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --bg4: #30363d;
+    --fg: #e6edf3; --fg2: #8b949e; --fg3: #484f58;
+    --blue: #58a6ff; --green: #3fb950; --orange: #d29922;
+    --red: #f85149; --purple: #bc8cff; --cyan: #76e3ea;
+    --teal: #2ea98f; --pink: #f778ba;
+    --border: #30363d; --glow: rgba(88,166,255,0.1);
+    --mono: 'JetBrains Mono', monospace; --sans: 'DM Sans', sans-serif;
+    --radius: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--sans); background:var(--bg); color:var(--fg); min-height:100vh; }
+
+  .app { display:flex; height:100vh; }
+  .sidebar { width:340px; border-right:1px solid var(--border); display:flex; flex-direction:column; background:var(--bg2); flex-shrink:0; }
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Header */
+  .header { padding:16px 20px; border-bottom:1px solid var(--border); background:var(--bg2); display:flex; align-items:center; gap:12px; }
+  .header h1 { font-size:15px; font-weight:700; letter-spacing:-.02em; }
+  .header .logo { font-family:var(--mono); color:var(--cyan); font-weight:700; font-size:13px; background:rgba(118,227,234,0.1); padding:3px 8px; border-radius:4px; }
+
+  /* Tabs */
+  .tabs { display:flex; border-bottom:1px solid var(--border); background:var(--bg2); }
+  .tab { padding:10px 18px; font-size:13px; font-weight:500; color:var(--fg2); cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; user-select:none; }
+  .tab:hover { color:var(--fg); background:var(--bg3); }
+  .tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+
+  /* Search */
+  .search-box { padding:12px 16px; border-bottom:1px solid var(--border); }
+  .search-box input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px 12px; color:var(--fg); font-size:13px; font-family:var(--mono); outline:none; }
+  .search-box input:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--glow); }
+  .search-box input::placeholder { color:var(--fg3); }
+
+  /* Tree */
+  .tree-container { flex:1; overflow-y:auto; padding:8px 0; }
+  .tree-node { padding:2px 0 2px 0; cursor:pointer; user-select:none; }
+  .tree-row { display:flex; align-items:center; padding:4px 12px 4px 0; border-radius:4px; transition:background .1s; }
+  .tree-row:hover { background:var(--bg3); }
+  .tree-row.selected { background:rgba(88,166,255,0.15); }
+  .tree-row.upstream { background:rgba(63,185,80,0.12); }
+  .tree-row.downstream { background:rgba(210,153,34,0.12); }
+  .tree-toggle { width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--fg3); flex-shrink:0; }
+  .tree-icon { width:18px; height:18px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; margin-right:6px; flex-shrink:0; font-family:var(--mono); }
+  .tree-icon.pgm { background:rgba(63,185,80,0.2); color:var(--green); }
+  .tree-icon.sub { background:rgba(88,166,255,0.2); color:var(--blue); }
+  .tree-icon.jcl { background:rgba(210,153,34,0.2); color:var(--orange); }
+  .tree-icon.map { background:rgba(188,140,255,0.2); color:var(--purple); }
+  .tree-icon.unk { background:rgba(139,148,158,0.2); color:var(--fg2); }
+  .tree-label { font-size:12.5px; font-family:var(--mono); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tree-badge { font-size:10px; color:var(--fg3); margin-left:auto; padding-left:8px; white-space:nowrap; }
+
+  /* Content area */
+  .content { flex:1; overflow-y:auto; padding:20px 24px; }
+
+  /* Detail panel */
+  .detail-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px; overflow:hidden; }
+  .detail-header { padding:12px 16px; font-size:14px; font-weight:600; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .detail-body { padding:16px; }
+  .detail-row { display:flex; gap:12px; margin-bottom:8px; font-size:13px; }
+  .detail-key { color:var(--fg2); width:120px; flex-shrink:0; }
+  .detail-val { font-family:var(--mono); font-size:12px; }
+
+  /* Tables */
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; padding:8px 12px; color:var(--fg2); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); background:var(--bg3); position:sticky; top:0; }
+  td { padding:6px 12px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; }
+  tr:hover td { background:var(--bg3); }
+  .op-read { color:var(--green); } .op-store { color:var(--blue); }
+  .op-update { color:var(--orange); } .op-delete { color:var(--red); }
+  .op-find { color:var(--cyan); }
+
+  /* Pills */
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; margin:1px 2px; }
+  .pill-green { background:rgba(63,185,80,0.15); color:var(--green); }
+  .pill-blue { background:rgba(88,166,255,0.15); color:var(--blue); }
+  .pill-orange { background:rgba(210,153,34,0.15); color:var(--orange); }
+  .pill-red { background:rgba(248,81,73,0.15); color:var(--red); }
+  .pill-purple { background:rgba(188,140,255,0.15); color:var(--purple); }
+
+  /* Stats bar */
+  .stats-bar { display:flex; gap:16px; padding:12px 16px; border-bottom:1px solid var(--border); background:var(--bg); font-size:12px; flex-wrap:wrap; }
+  .stat { display:flex; align-items:center; gap:6px; }
+  .stat-num { font-family:var(--mono); font-weight:700; color:var(--blue); }
+  .stat-label { color:var(--fg2); }
+
+  /* Filter chips */
+  .filter-bar { display:flex; gap:8px; padding:12px 16px; border-bottom:1px solid var(--border); flex-wrap:wrap; align-items:center; }
+  .chip { padding:4px 10px; border:1px solid var(--border); border-radius:14px; font-size:11px; cursor:pointer; transition:all .15s; font-family:var(--mono); }
+  .chip:hover { border-color:var(--blue); color:var(--blue); }
+  .chip.active { background:rgba(88,166,255,0.15); border-color:var(--blue); color:var(--blue); }
+
+  /* FRD output */
+  .frd-output { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:20px; font-size:13px; line-height:1.7; white-space:pre-wrap; font-family:var(--sans); max-height:70vh; overflow-y:auto; }
+  .frd-output h1 { font-size:20px; margin-bottom:8px; color:var(--blue); }
+  .frd-output h2 { font-size:16px; margin:16px 0 8px; color:var(--cyan); }
+  .frd-output h3 { font-size:14px; margin:12px 0 6px; color:var(--fg); }
+
+  /* Buttons */
+  .btn { padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:var(--bg3); color:var(--fg); font-size:12px; cursor:pointer; font-family:var(--sans); font-weight:500; transition:all .15s; }
+  .btn:hover { background:var(--bg4); border-color:var(--blue); }
+  .btn-primary { background:rgba(88,166,255,0.15); border-color:var(--blue); color:var(--blue); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--fg3); border-radius:3px; }
+
+  /* Empty state */
+  .empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--fg3); gap:12px; padding:40px; text-align:center; }
+  .empty-icon { font-size:40px; opacity:0.3; }
+
+  /* Load overlay */
+  .load-overlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; gap:16px; }
+  .load-overlay h2 { font-size:18px; color:var(--cyan); font-family:var(--mono); }
+  .load-overlay p { color:var(--fg2); font-size:13px; }
+  .load-bar { width:300px; height:4px; background:var(--bg3); border-radius:2px; overflow:hidden; }
+  .load-fill { height:100%; background:var(--blue); border-radius:2px; transition:width .3s; }
+
+  /* Highlight legend */
+  .legend { display:flex; gap:16px; padding:8px 16px; border-bottom:1px solid var(--border); font-size:11px; color:var(--fg2); }
+  .legend-item { display:flex; align-items:center; gap:4px; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+// ── Helper: get icon class ──
+function iconClass(type) {
+  if (!type) return 'unk';
+  const t = type.toLowerCase();
+  if (t === 'jcl') return 'jcl';
+  if (['subprogram','helproutine','subroutine','copycode'].includes(t)) return 'sub';
+  if (t === 'map') return 'map';
+  if (t === 'program') return 'pgm';
+  return 'unk';
+}
+function iconLabel(type) {
+  if (!type) return '?';
+  const t = type.toLowerCase();
+  const m = {jcl:'JC',program:'PG',subprogram:'SB',helproutine:'HR',subroutine:'SR',map:'MP',copycode:'CC',lda:'LD',gda:'GD',pda:'PD'};
+  return m[t] || t.substring(0,2).toUpperCase();
+}
+function opClass(op) {
+  const m = {READ:'op-read',FIND:'op-find',GET:'op-read',STORE:'op-store',UPDATE:'op-update',DELETE:'op-delete',HISTOGRAM:'op-find'};
+  return m[op] || '';
+}
+
+// ── Trace functions ──
+function getUpstream(modules, name, visited = new Set()) {
+  if (visited.has(name)) return new Set();
+  visited.add(name);
+  const mod = modules[name];
+  if (!mod) return new Set();
+  const result = new Set();
+  (mod.called_by || []).forEach(caller => {
+    result.add(caller);
+    getUpstream(modules, caller, visited).forEach(u => result.add(u));
+  });
+  return result;
+}
+function getDownstream(modules, name, visited = new Set()) {
+  if (visited.has(name)) return new Set();
+  visited.add(name);
+  const mod = modules[name];
+  if (!mod) return new Set();
+  const result = new Set();
+  (mod.calls || []).forEach(c => {
+    result.add(c.target);
+    getDownstream(modules, c.target, visited).forEach(d => result.add(d));
+  });
+  return result;
+}
+
+// ── Tree Node Component ──
+function TreeNode({ name, modules, depth, selected, upstream, downstream, onSelect, expandedSet, toggleExpand, searchTerm }) {
+  const mod = modules[name] || {};
+  const calls = (mod.calls || []).map(c => c.target).filter(t => modules[t]);
+  const hasChildren = calls.length > 0;
+  const isExpanded = expandedSet.has(name);
+  const isSelected = selected === name;
+  const isUpstream = upstream.has(name);
+  const isDownstream = downstream.has(name);
+
+  let rowClass = 'tree-row';
+  if (isSelected) rowClass += ' selected';
+  else if (isUpstream) rowClass += ' upstream';
+  else if (isDownstream) rowClass += ' downstream';
+
+  // Hide nodes not matching search (but show if their children match)
+  if (searchTerm && !name.toLowerCase().includes(searchTerm.toLowerCase())) {
+    const childMatch = calls.some(c => c.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (!childMatch && !isExpanded) return null;
+  }
+
+  return (
+    <div className="tree-node" style={{paddingLeft: depth * 16}}>
+      <div className={rowClass} onClick={() => onSelect(name)}>
+        <div className="tree-toggle" onClick={e => { e.stopPropagation(); if (hasChildren) toggleExpand(name); }}>
+          {hasChildren ? (isExpanded ? '▾' : '▸') : ' '}
+        </div>
+        <div className={`tree-icon ${iconClass(mod.type)}`}>{iconLabel(mod.type)}</div>
+        <span className="tree-label">{name}</span>
+        <span className="tree-badge">{calls.length > 0 ? `→${calls.length}` : ''}</span>
+      </div>
+      {isExpanded && calls.map(child => (
+        <TreeNode key={child} name={child} modules={modules} depth={depth+1}
+          selected={selected} upstream={upstream} downstream={downstream}
+          onSelect={onSelect} expandedSet={expandedSet} toggleExpand={toggleExpand} searchTerm={searchTerm} />
+      ))}
+    </div>
+  );
+}
+
+// ── Detail Panel ──
+function DetailPanel({ name, modules, graph, onSelect }) {
+  const mod = modules[name];
+  if (!mod) return <div className="empty"><div className="empty-icon">📋</div><div>Select a program to view details</div></div>;
+
+  return (
+    <div>
+      <div className="detail-card">
+        <div className="detail-header">
+          <span className={`tree-icon ${iconClass(mod.type)}`}>{iconLabel(mod.type)}</span>
+          {name}
+          <span className="pill pill-blue">{mod.type}</span>
+          {mod.library && <span className="pill pill-purple">{mod.library}</span>}
+        </div>
+        <div className="detail-body">
+          <div className="detail-row"><span className="detail-key">Lines</span><span className="detail-val">{mod.line_count || 'N/A'}</span></div>
+          <div className="detail-row"><span className="detail-key">Calls</span><span className="detail-val">{(mod.calls||[]).length} programs</span></div>
+          <div className="detail-row"><span className="detail-key">Called by</span><span className="detail-val">{(mod.called_by||[]).length} programs</span></div>
+          <div className="detail-row"><span className="detail-key">DB access</span><span className="detail-val">{(mod.db_access||[]).length} operations</span></div>
+          <div className="detail-row"><span className="detail-key">Maps</span><span className="detail-val">{(mod.maps||[]).join(', ') || 'None'}</span></div>
+        </div>
+      </div>
+
+      {(mod.calls||[]).length > 0 && (
+        <div className="detail-card">
+          <div className="detail-header" style={{color:'var(--orange)'}}>▼ Downstream calls</div>
+          <div className="detail-body">
+            <table><thead><tr><th>Program</th><th>Type</th><th>Via</th></tr></thead>
+            <tbody>{(mod.calls||[]).map((c,i) => {
+              const tm = modules[c.target] || {};
+              return <tr key={i} style={{cursor:'pointer'}} onClick={() => onSelect(c.target)}>
+                <td style={{color:'var(--blue)'}}>{c.target}</td>
+                <td><span className={`pill pill-${iconClass(tm.type)==='pgm'?'green':iconClass(tm.type)==='jcl'?'orange':'blue'}`}>{tm.type||'?'}</span></td>
+                <td>{c.type}</td>
+              </tr>;
+            })}</tbody></table>
+          </div>
+        </div>
+      )}
+
+      {(mod.called_by||[]).length > 0 && (
+        <div className="detail-card">
+          <div className="detail-header" style={{color:'var(--green)'}}>▲ Upstream callers</div>
+          <div className="detail-body">
+            <table><thead><tr><th>Program</th><th>Type</th></tr></thead>
+            <tbody>{(mod.called_by||[]).map((c,i) => {
+              const cm = modules[c] || {};
+              return <tr key={i} style={{cursor:'pointer'}} onClick={() => onSelect(c)}>
+                <td style={{color:'var(--green)'}}>{c}</td>
+                <td><span className="pill pill-green">{cm.type||'?'}</span></td>
+              </tr>;
+            })}</tbody></table>
+          </div>
+        </div>
+      )}
+
+      {(mod.db_access||[]).length > 0 && (
+        <div className="detail-card">
+          <div className="detail-header">Database access</div>
+          <div className="detail-body">
+            <table><thead><tr><th>DDM</th><th>Operation</th><th>Fields</th></tr></thead>
+            <tbody>{(mod.db_access||[]).map((a,i) =>
+              <tr key={i}><td>{a.ddm}</td><td className={opClass(a.operation)}>{a.operation}</td><td style={{fontSize:'11px',maxWidth:300,overflow:'hidden',textOverflow:'ellipsis'}}>{(a.fields||[]).join(', ')}</td></tr>
+            )}</tbody></table>
+          </div>
+        </div>
+      )}
+
+      {(mod.ref_tables||[]).length > 0 && (
+        <div className="detail-card">
+          <div className="detail-header">Reference tables</div>
+          <div className="detail-body">
+            <table><thead><tr><th>Table</th><th>Field</th><th>Type</th></tr></thead>
+            <tbody>{(mod.ref_tables||[]).map((r,i) =>
+              <tr key={i}><td>{r.table}</td><td>{r.field}</td><td>{r.type}</td></tr>
+            )}</tbody></table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Tab 2: Adabas File View ──
+function AdabasView({ graph, onSelectProgram }) {
+  const [selectedDDM, setSelectedDDM] = useState(null);
+  const [fieldFilter, setFieldFilter] = useState('');
+  const [opFilter, setOpFilter] = useState('ALL');
+  const adabasIndex = graph.adabas_index || {};
+  const ddms = Object.keys(adabasIndex).sort();
+
+  const filtered = useMemo(() => {
+    if (!selectedDDM || !adabasIndex[selectedDDM]) return [];
+    let progs = adabasIndex[selectedDDM].programs || [];
+    if (opFilter !== 'ALL') progs = progs.filter(p => p.operation === opFilter);
+    if (fieldFilter) {
+      const ff = fieldFilter.toUpperCase();
+      progs = progs.filter(p => (p.fields||[]).some(f => f.includes(ff)));
+    }
+    return progs;
+  }, [selectedDDM, opFilter, fieldFilter, adabasIndex]);
+
+  return (
+    <div>
+      <div className="filter-bar">
+        <span style={{color:'var(--fg2)',fontSize:'12px'}}>DDM / Adabas file:</span>
+        <select value={selectedDDM||''} onChange={e => setSelectedDDM(e.target.value||null)}
+          style={{background:'var(--bg)',border:'1px solid var(--border)',color:'var(--fg)',padding:'4px 8px',borderRadius:6,fontSize:12,fontFamily:'var(--mono)'}}>
+          <option value="">Select a DDM ({ddms.length} available)</option>
+          {ddms.map(d => <option key={d} value={d}>{d} ({(adabasIndex[d].programs||[]).length} programs)</option>)}
+        </select>
+      </div>
+      {selectedDDM && (
+        <>
+          <div className="filter-bar">
+            <span style={{color:'var(--fg2)',fontSize:'12px'}}>Operation:</span>
+            {['ALL','READ','FIND','GET','STORE','UPDATE','DELETE','HISTOGRAM'].map(op =>
+              <div key={op} className={`chip ${opFilter===op?'active':''}`} onClick={() => setOpFilter(op)}>{op}</div>
+            )}
+          </div>
+          <div className="filter-bar">
+            <span style={{color:'var(--fg2)',fontSize:'12px'}}>Field filter:</span>
+            <input value={fieldFilter} onChange={e => setFieldFilter(e.target.value)}
+              placeholder="Type field name to filter..."
+              style={{background:'var(--bg)',border:'1px solid var(--border)',color:'var(--fg)',padding:'4px 8px',borderRadius:6,fontSize:12,fontFamily:'var(--mono)',flex:1}} />
+          </div>
+          <div className="stats-bar">
+            <div className="stat"><span className="stat-num">{filtered.length}</span><span className="stat-label">programs shown</span></div>
+            <div className="stat"><span className="stat-num">{(adabasIndex[selectedDDM].fields||[]).length}</span><span className="stat-label">unique fields</span></div>
+          </div>
+          <div style={{padding:'0 16px'}}>
+            <table><thead><tr><th>Program</th><th>Operation</th><th>Fields</th></tr></thead>
+            <tbody>{filtered.map((p,i) =>
+              <tr key={i} style={{cursor:'pointer'}} onClick={() => onSelectProgram(p.program)}>
+                <td style={{color:'var(--blue)'}}>{p.program}</td>
+                <td className={opClass(p.operation)}>{p.operation}</td>
+                <td style={{fontSize:'11px',maxWidth:400,overflow:'hidden',textOverflow:'ellipsis'}}>{(p.fields||[]).join(', ')}</td>
+              </tr>
+            )}</tbody></table>
+          </div>
+        </>
+      )}
+      {!selectedDDM && <div className="empty"><div className="empty-icon">🗄️</div><div>Select an Adabas DDM to see all programs accessing it</div><div style={{fontSize:12}}>You can then filter by operation type and specific fields</div></div>}
+    </div>
+  );
+}
+
+// ── Tab 3: Reference Table View ──
+function RefTableView({ graph, onSelectProgram }) {
+  const [selectedTable, setSelectedTable] = useState(null);
+  const refIndex = graph.ref_table_index || {};
+  const tables = Object.keys(refIndex).sort();
+
+  return (
+    <div>
+      <div className="filter-bar">
+        <span style={{color:'var(--fg2)',fontSize:'12px'}}>Reference table:</span>
+        <select value={selectedTable||''} onChange={e => setSelectedTable(e.target.value||null)}
+          style={{background:'var(--bg)',border:'1px solid var(--border)',color:'var(--fg)',padding:'4px 8px',borderRadius:6,fontSize:12,fontFamily:'var(--mono)'}}>
+          <option value="">Select a table ({tables.length} available)</option>
+          {tables.map(t => <option key={t} value={t}>{t} ({refIndex[t].length} programs)</option>)}
+        </select>
+      </div>
+      {selectedTable && refIndex[selectedTable] && (
+        <div style={{padding:'0 16px'}}>
+          <div className="stats-bar" style={{padding:'12px 0'}}>
+            <div className="stat"><span className="stat-num">{refIndex[selectedTable].length}</span><span className="stat-label">programs reading this table</span></div>
+          </div>
+          <table><thead><tr><th>Program</th><th>Lookup field</th><th>Access type</th></tr></thead>
+          <tbody>{refIndex[selectedTable].map((r,i) =>
+            <tr key={i} style={{cursor:'pointer'}} onClick={() => onSelectProgram(r.program)}>
+              <td style={{color:'var(--blue)'}}>{r.program}</td>
+              <td>{r.field}</td>
+              <td>{r.type}</td>
+            </tr>
+          )}</tbody></table>
+        </div>
+      )}
+      {!selectedTable && <div className="empty"><div className="empty-icon">📑</div><div>Select a reference table to see programs that read it</div><div style={{fontSize:12}}>Reference tables are detected by READ BY length/descriptor patterns</div></div>}
+    </div>
+  );
+}
+
+// ── Tab 4: Functional View + FRD ──
+function FunctionalView({ graph, selectedName, onSelect }) {
+  const [frdTarget, setFrdTarget] = useState('');
+  const [frdType, setFrdType] = useState('program');
+  const [frdContent, setFrdContent] = useState('');
+  const modules = graph.modules || {};
+
+  function generateFRD() {
+    const target = (frdTarget || selectedName || '').toUpperCase();
+    if (!target) return;
+
+    let content = '';
+    if (frdType === 'program') {
+      content = generateProgramFRD(target, modules, graph);
+    } else if (frdType === 'ddm') {
+      content = generateDDMFRD(target, graph);
+    } else if (frdType === 'field') {
+      const parts = target.split('.');
+      if (parts.length === 2) content = generateFieldFRD(parts[0], parts[1], graph);
+      else content = 'Use format: DDM-NAME.FIELD-NAME';
+    }
+    setFrdContent(content);
+  }
+
+  // Build functional tree for selected program
+  function renderFuncTree(name, depth = 0, visited = new Set()) {
+    if (visited.has(name) || depth > 8) return null;
+    visited.add(name);
+    const mod = modules[name] || {};
+    const calls = (mod.calls || []).map(c => c.target);
+    const ddms = [...new Set((mod.db_access || []).map(a => a.ddm))];
+    const maps = mod.maps || [];
+    const indent = depth * 24;
+
+    let funcLabel = inferFunction(name, mod);
+
+    return (
+      <div key={name + depth}>
+        <div style={{paddingLeft:indent, padding:'4px 0 4px ' + indent + 'px', cursor:'pointer', display:'flex', alignItems:'center', gap:8}}
+          onClick={() => onSelect(name)}>
+          <span style={{color:'var(--fg3)', fontSize:11}}>{depth > 0 ? '└─' : '●'}</span>
+          <span style={{color:'var(--blue)', fontFamily:'var(--mono)', fontSize:12}}>{name}</span>
+          <span style={{color:'var(--fg2)', fontSize:11}}>{funcLabel}</span>
+          {maps.length > 0 && <span className="pill pill-purple">Screen</span>}
+          {ddms.length > 0 && <span className="pill pill-green">{ddms.length} tables</span>}
+        </div>
+        {calls.filter(c => modules[c]).map(c => renderFuncTree(c, depth + 1, visited))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="filter-bar" style={{gap:8}}>
+        <select value={frdType} onChange={e => setFrdType(e.target.value)}
+          style={{background:'var(--bg)',border:'1px solid var(--border)',color:'var(--fg)',padding:'6px 8px',borderRadius:6,fontSize:12}}>
+          <option value="program">Program FRD</option>
+          <option value="ddm">DDM/Table FRD</option>
+          <option value="field">Field FRD (DDM.FIELD)</option>
+        </select>
+        <input value={frdTarget} onChange={e => setFrdTarget(e.target.value)}
+          placeholder={frdType === 'field' ? 'DDM-NAME.FIELD-NAME' : 'Enter name...'}
+          style={{background:'var(--bg)',border:'1px solid var(--border)',color:'var(--fg)',padding:'6px 8px',borderRadius:6,fontSize:12,fontFamily:'var(--mono)',flex:1}} />
+        <button className="btn btn-primary" onClick={generateFRD}>Generate FRD</button>
+      </div>
+
+      {selectedName && modules[selectedName] && !frdContent && (
+        <div style={{padding:'0 16px'}}>
+          <div className="detail-card">
+            <div className="detail-header">Functional decomposition: {selectedName}</div>
+            <div className="detail-body" style={{maxHeight:'60vh', overflowY:'auto'}}>
+              {renderFuncTree(selectedName)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {frdContent && (
+        <div style={{padding:'0 16px'}}>
+          <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
+            <button className="btn" onClick={() => setFrdContent('')}>← Back to tree</button>
+            <button className="btn btn-primary" onClick={() => {
+              const blob = new Blob([frdContent], {type:'text/markdown'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = `FRD_${frdTarget||selectedName}.md`; a.click();
+            }}>Download .md</button>
+          </div>
+          <div className="frd-output" dangerouslySetInnerHTML={{__html: markdownToHTML(frdContent)}} />
+        </div>
+      )}
+
+      {!selectedName && !frdContent && (
+        <div className="empty"><div className="empty-icon">📝</div>
+          <div>Select a program from the tree to see its functional decomposition</div>
+          <div style={{fontSize:12}}>Or enter a name above and click Generate FRD</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Infer functional purpose from name ──
+function inferFunction(name, mod) {
+  const n = name.toLowerCase();
+  if (/inq|inquiry|disp|display|view|show|list|get/.test(n)) return '— Inquiry / Display';
+  if (/upd|update|edit|modify|chg|change|maint/.test(n)) return '— Update / Modify';
+  if (/add|create|new|ins|insert|reg/.test(n)) return '— Create / Register';
+  if (/del|remove|purge|arch/.test(n)) return '— Delete / Archive';
+  if (/val|valid|chk|check|verify/.test(n)) return '— Validate';
+  if (/rpt|report|print|extract|exp/.test(n)) return '— Report / Extract';
+  if (/batch|job|night|daily|proc/.test(n)) return '— Batch process';
+  if (/menu|main|drv|driver|ctrl/.test(n)) return '— Controller / Menu';
+  if (/sort|merge/.test(n)) return '— Sort / Merge';
+  if (/fmt|format|conv/.test(n)) return '— Format / Convert';
+  if (/err|error|msg/.test(n)) return '— Error handling';
+  if (/help|hlp/.test(n)) return '— Help / Assistance';
+  if (/log|audit|hist/.test(n)) return '— Logging / Audit';
+  if (/calc|comp|compute/.test(n)) return '— Calculation';
+  if ((mod.type||'') === 'map') return '— Screen layout';
+  return '';
+}
+
+// ── Simple markdown to HTML ──
+function markdownToHTML(md) {
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\- (.+)$/gm, '• $1')
+    .replace(/\|(.+)\|/g, (match) => match)
+    .replace(/\n/g, '<br>');
+}
+
+// ── FRD generation (client-side) ──
+function generateProgramFRD(name, modules, graph) {
+  const mod = modules[name];
+  if (!mod) return `Program "${name}" not found in the graph.`;
+
+  const ddms = [...new Set((mod.db_access||[]).map(a=>a.ddm))];
+  const calls = (mod.calls||[]).map(c=>c.target);
+  const callers = mod.called_by || [];
+  const maps = mod.maps || [];
+
+  let lines = [];
+  lines.push(`# Functional Requirements Document`);
+  lines.push(`## ${name}\n`);
+  lines.push(`**Type:** ${(mod.type||'unknown').charAt(0).toUpperCase()+(mod.type||'').slice(1)}`);
+  lines.push(`**Library:** ${mod.library || 'N/A'}\n`);
+
+  lines.push(`## 1. Functional Overview\n`);
+  lines.push(inferFuncDesc(name, mod, modules));
+
+  lines.push(`\n## 2. User Interface\n`);
+  if (maps.length) maps.forEach(m => lines.push(`- **${m}** — User interaction screen`));
+  else lines.push('No direct user interaction (batch/background process).');
+
+  lines.push(`\n## 3. Data Entities\n`);
+  if (mod.db_access && mod.db_access.length) {
+    lines.push(`| Data Entity | Access Type | Key Fields |`);
+    lines.push(`|---|---|---|`);
+    const seen = new Set();
+    (mod.db_access||[]).forEach(a => {
+      if (!seen.has(a.ddm)) { seen.add(a.ddm);
+        const ops = [...new Set((mod.db_access||[]).filter(x=>x.ddm===a.ddm).map(x=>x.operation))];
+        const fields = [...new Set((mod.db_access||[]).filter(x=>x.ddm===a.ddm).flatMap(x=>x.fields||[]))].slice(0,8);
+        lines.push(`| ${a.ddm} | ${ops.join(', ')} | ${fields.join(', ')||'N/A'} |`);
+      }
+    });
+  } else lines.push('No direct database access.');
+
+  lines.push(`\n## 4. Process Flow\n`);
+  lines.push(`### 4.1 Upstream (Called By)`);
+  if (callers.length) callers.forEach(c => { const cm=modules[c]||{}; lines.push(`- **${c}** (${cm.type||'?'})`); });
+  else lines.push('Top-level entry point.');
+
+  lines.push(`\n### 4.2 Downstream (Calls)`);
+  if (calls.length) calls.forEach(c => { const cm=modules[c]||{}; lines.push(`- **${c}** ${inferFunction(c,cm)}`); });
+  else lines.push('Leaf function (no further calls).');
+
+  lines.push(`\n## 5. Functional Tree\n\`\`\``);
+  renderTextTree(lines, name, modules, 0, new Set());
+  lines.push('```');
+
+  if ((mod.ref_tables||[]).length) {
+    lines.push(`\n## 6. Reference Data\n`);
+    lines.push(`| Table | Lookup Field |`);
+    lines.push(`|---|---|`);
+    (mod.ref_tables||[]).forEach(r => lines.push(`| ${r.table} | ${r.field} |`));
+  }
+
+  lines.push(`\n## 7. Business Rules (Inferred)\n`);
+  let rn = 1;
+  (mod.db_access||[]).forEach(a => {
+    if (a.operation==='STORE') lines.push(`- **BR-${String(rn++).padStart(3,'0')}**: New records can be created in ${a.ddm}`);
+    if (a.operation==='UPDATE') lines.push(`- **BR-${String(rn++).padStart(3,'0')}**: Records in ${a.ddm} can be modified`);
+    if (a.operation==='DELETE') lines.push(`- **BR-${String(rn++).padStart(3,'0')}**: Records can be removed from ${a.ddm}`);
+  });
+  (mod.ref_tables||[]).forEach(r => lines.push(`- **BR-${String(rn++).padStart(3,'0')}**: Values validated against ${r.table}`));
+  if (rn===1) lines.push('- Read-only module (no data modifications detected)');
+
+  return lines.join('\n');
+}
+
+function generateDDMFRD(ddm, graph) {
+  const adabas = (graph.adabas_index||{})[ddm];
+  if (!adabas) return `DDM "${ddm}" not found.`;
+  let lines = [`# Data Entity FRD: ${ddm}\n`];
+  lines.push(`Accessed by **${adabas.programs.length}** programs.`);
+  lines.push(`Fields: ${(adabas.fields||[]).slice(0,30).join(', ')}\n`);
+  lines.push(`| Program | Operation | Fields |`);
+  lines.push(`|---|---|---|`);
+  const seen = new Set();
+  adabas.programs.forEach(p => {
+    const k = p.program+p.operation;
+    if (!seen.has(k)) { seen.add(k); lines.push(`| ${p.program} | ${p.operation} | ${(p.fields||[]).slice(0,6).join(', ')} |`); }
+  });
+  return lines.join('\n');
+}
+
+function generateFieldFRD(ddm, field, graph) {
+  const adabas = (graph.adabas_index||{})[ddm];
+  if (!adabas) return `DDM "${ddm}" not found.`;
+  let lines = [`# Field Lineage FRD: ${ddm}.${field}\n`];
+  const readers = [], writers = [];
+  adabas.programs.forEach(p => {
+    if ((p.fields||[]).includes(field)) {
+      if (['READ','FIND','GET','HISTOGRAM'].includes(p.operation)) readers.push(p);
+      if (['STORE','UPDATE'].includes(p.operation)) writers.push(p);
+    }
+  });
+  lines.push(`## Read by (${readers.length} programs)\n`);
+  readers.forEach(p => lines.push(`- **${p.program}** (${p.operation})`));
+  lines.push(`\n## Written by (${writers.length} programs)\n`);
+  writers.forEach(p => lines.push(`- **${p.program}** (${p.operation})`));
+  return lines.join('\n');
+}
+
+function renderTextTree(lines, name, modules, depth, visited) {
+  if (visited.has(name) || depth > 8) return;
+  visited.add(name);
+  const mod = modules[name] || {};
+  const prefix = '  '.repeat(depth) + (depth > 0 ? '└── ' : '');
+  const ddms = [...new Set((mod.db_access||[]).map(a=>a.ddm))];
+  const maps = mod.maps || [];
+  let label = name;
+  if (maps.length) label += ` [Screen: ${maps.slice(0,2).join(', ')}]`;
+  if (ddms.length) label += ` [Data: ${ddms.slice(0,3).join(', ')}]`;
+  lines.push(prefix + label);
+  (mod.calls||[]).forEach(c => { if (modules[c.target]) renderTextTree(lines, c.target, modules, depth+1, visited); });
+}
+
+function inferFuncDesc(name, mod, modules) {
+  const n = name.toLowerCase();
+  let desc = '';
+  if (/inq|inquiry|disp|display/.test(n)) desc = 'This module provides inquiry and display functionality';
+  else if (/upd|update|edit|maint/.test(n)) desc = 'This module handles data updates and modifications';
+  else if (/add|create|new|ins/.test(n)) desc = 'This module handles new record creation';
+  else if (/del|remove/.test(n)) desc = 'This module handles record removal';
+  else if (/val|valid|chk/.test(n)) desc = 'This module performs data validation';
+  else if (/rpt|report|print/.test(n)) desc = 'This module generates reports or extracts';
+  else if (/batch|job|night/.test(n)) desc = 'This module performs batch processing';
+  else if (/menu|main|drv/.test(n)) desc = 'This module serves as a menu or controller';
+  else desc = 'This module provides business functionality';
+
+  const ddms = [...new Set((mod.db_access||[]).map(a=>a.ddm))];
+  if (ddms.length) desc += `, working with data from ${ddms.join(', ')}`;
+  if ((mod.maps||[]).length) desc += `. Users interact through screen(s): ${mod.maps.join(', ')}`;
+  return desc + '.';
+}
+
+
+// ── Main App ──
+function App() {
+  const [graph, setGraph] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadPct, setLoadPct] = useState(0);
+  const [tab, setTab] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [search, setSearch] = useState('');
+  const [expandedSet, setExpandedSet] = useState(new Set());
+  const fileRef = useRef();
+
+  const modules = graph?.modules || {};
+  const upstream = useMemo(() => selected ? getUpstream(modules, selected) : new Set(), [selected, modules]);
+  const downstream = useMemo(() => selected ? getDownstream(modules, selected) : new Set(), [selected, modules]);
+
+  // Get root programs for tree display
+  const roots = useMemo(() => {
+    if (!graph) return [];
+    return (graph.roots || []).slice(0, 500);
+  }, [graph]);
+
+  const filteredRoots = useMemo(() => {
+    if (!search) return roots;
+    const s = search.toLowerCase();
+    // Search all modules, not just roots
+    return Object.keys(modules).filter(n => n.toLowerCase().includes(s)).slice(0, 200);
+  }, [roots, search, modules]);
+
+  function toggleExpand(name) {
+    setExpandedSet(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  }
+
+  function handleSelect(name) {
+    setSelected(name);
+    // Auto-expand selected node
+    setExpandedSet(prev => { const next = new Set(prev); next.add(name); return next; });
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true); setLoadPct(10);
+    const reader = new FileReader();
+    reader.onprogress = (ev) => { if (ev.lengthComputable) setLoadPct(Math.round(ev.loaded/ev.total*80)); };
+    reader.onload = (ev) => {
+      setLoadPct(90);
+      try {
+        const data = JSON.parse(ev.target.result);
+        setGraph(data);
+        setLoadPct(100);
+        setTimeout(() => setLoading(false), 300);
+      } catch(err) {
+        alert('Error parsing JSON: ' + err.message);
+        setLoading(false);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // Show file picker if no data
+  if (loading && !graph) {
+    return (
+      <div className="load-overlay">
+        <h2>MFREA Viewer</h2>
+        <p>Mainframe Reverse Engineering Agent</p>
+        <div style={{marginTop:20}}>
+          <p style={{marginBottom:12}}>Load your <code style={{color:'var(--cyan)'}}>graph.json</code> file generated by the scanner:</p>
+          <div style={{display:'flex',gap:12,alignItems:'center',justifyContent:'center'}}>
+            <input ref={fileRef} type="file" accept=".json" onChange={handleFile} style={{display:'none'}} />
+            <button className="btn btn-primary" style={{padding:'10px 24px',fontSize:14}} onClick={() => fileRef.current.click()}>
+              Load graph.json
+            </button>
+          </div>
+          <p style={{marginTop:20,fontSize:11,color:'var(--fg3)'}}>
+            Generate graph.json by running:<br/>
+            <code style={{color:'var(--orange)'}}>python scanner.py --natural /path/to/natural --jcl /path/to/jcl --output graph.json</code>
+          </p>
+        </div>
+        {loadPct > 0 && <div className="load-bar"><div className="load-fill" style={{width:loadPct+'%'}} /></div>}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="load-overlay"><h2>Loading...</h2><div className="load-bar"><div className="load-fill" style={{width:loadPct+'%'}} /></div></div>;
+  }
+
+  const stats = graph?.metadata?.stats || {};
+  const tabNames = ['Dependency tree', 'Adabas files', 'Ref tables', 'Functional / FRD'];
+
+  return (
+    <div className="app">
+      <div className="sidebar">
+        <div className="header">
+          <span className="logo">MFREA</span>
+          <h1>Dependency tree</h1>
+        </div>
+        <div className="stats-bar">
+          <div className="stat"><span className="stat-num">{(stats.total_modules||0).toLocaleString()}</span><span className="stat-label">modules</span></div>
+          <div className="stat"><span className="stat-num">{(stats.total_calls||0).toLocaleString()}</span><span className="stat-label">links</span></div>
+          <div className="stat"><span className="stat-num">{(stats.unique_ddms||0).toLocaleString()}</span><span className="stat-label">DDMs</span></div>
+        </div>
+        <div className="search-box">
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search programs, JCL..." />
+        </div>
+        <div className="legend">
+          <div className="legend-item"><div className="legend-dot" style={{background:'var(--blue)'}} />Selected</div>
+          <div className="legend-item"><div className="legend-dot" style={{background:'var(--green)'}} />Upstream</div>
+          <div className="legend-item"><div className="legend-dot" style={{background:'var(--orange)'}} />Downstream</div>
+        </div>
+        <div className="tree-container">
+          {filteredRoots.map(name => (
+            <TreeNode key={name} name={name} modules={modules} depth={0}
+              selected={selected} upstream={upstream} downstream={downstream}
+              onSelect={handleSelect} expandedSet={expandedSet} toggleExpand={toggleExpand} searchTerm={search} />
+          ))}
+          {filteredRoots.length === 0 && <div style={{padding:20,color:'var(--fg3)',textAlign:'center',fontSize:12}}>No matches found</div>}
+        </div>
+      </div>
+      <div className="main">
+        <div className="tabs">
+          {tabNames.map((t,i) => <div key={i} className={`tab ${tab===i?'active':''}`} onClick={() => setTab(i)}>{t}</div>)}
+        </div>
+        <div className="content">
+          {tab === 0 && <DetailPanel name={selected} modules={modules} graph={graph} onSelect={handleSelect} />}
+          {tab === 1 && <AdabasView graph={graph} onSelectProgram={(p) => { handleSelect(p); setTab(0); }} />}
+          {tab === 2 && <RefTableView graph={graph} onSelectProgram={(p) => { handleSelect(p); setTab(0); }} />}
+          {tab === 3 && <FunctionalView graph={graph} selectedName={selected} onSelect={handleSelect} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
