@@ -1,0 +1,35 @@
+{
+  "skill_name": "mainframe-analyst",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "DEEP DIVE on this Natural program:\n\nPath: /mainframe-code/CUSTLIB/natural/CUSTMAIN.NSP\n\nDEFINE DATA\nPARAMETER\n1 #ACTION (A1)\n1 #CUST-ID (A10)\nLOCAL USING LDA-CUSTDATA\nEND-DEFINE\n\nIF #ACTION = 'I'\n  CALLNAT 'CUSTINQ' #CUST-ID #CUST-NAME #CUST-ADDR\n  INPUT USING MAP 'M-CUSTDISP'\nELSE\n  IF #ACTION = 'U'\n    CALLNAT 'CUSTUPD' #CUST-ID #CUST-NAME #CUST-ADDR #STATUS\n    IF #STATUS = 'OK'\n      WRITE 'Customer updated successfully'\n    ELSE\n      REINPUT 'Update failed - please retry'\n    END-IF\n  END-IF\nEND-IF\nEND",
+      "expected_output": "Complete top-down analysis with: Program Identity block, Call Chain table showing CUSTINQ and CUSTUPD with parameters, Map interaction for M-CUSTDISP, Business logic for the IF/ELSE branches, Mermaid flowchart, and issues/observations section",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "IMPACT CHECK on Adabas file number 152 (DDM: DDM-CUSTOMER). I have programs CUSTINQ, CUSTUPD, ORDENTRY, and RPTCUST that all reference this file. What programs access this file and how?",
+      "expected_output": "Bottom-up analysis with: File Identity, Program Access Inventory table, Access Pattern Summary counts, Caller chain for each program traced upward, Mermaid diagram with all programs pointing to FILE-152 colour-coded by operation type",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "TXN TRACE on CICS transaction CI01. The initial program is CUSTMAIN which displays a search screen, calls CUSTINQ for lookup, shows results on MAP-CUSTDISP, and allows edit via MAP-CUSTEDIT which calls CUSTUPD to save changes to FILE-152.",
+      "expected_output": "Complete CICS transaction analysis with: Transaction binding, Program execution chain, Screen flow diagram showing all maps and PF-key navigation, Field visibility inventory per screen, Validation rules per editable field, Database access map, Error handling summary, and comprehensive Mermaid flowchart",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "FIELD TRACE on CUST-STATUS in Adabas file 152 (DDM-CUSTOMER). This field is an A1 descriptor used in CUSTINQ (read), CUSTUPD (update), ORDENTRY (search key), and displayed on MAP-CUSTDISP.",
+      "expected_output": "Complete field lineage with: Field definition details, Write path table showing all programs that write and their source of value, Read path table showing all programs that read and how they use it, Selection usage showing it as a search descriptor, Screen presence showing MAP-CUSTDISP details, Cross-file propagation if any, and Mermaid lineage diagram",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Analyse this JCL job and trace what programs it runs and what Adabas files they access:\n\n//NIGHTBAT JOB (ACCT),'NIGHTLY BATCH',CLASS=A,MSGCLASS=X\n//STEP01 EXEC PGM=NATBATCH,PARM='CUSTLIB,EXTCUST'\n//STEP02 EXEC PGM=SORT\n//STEP03 EXEC PGM=NATBATCH,PARM='CUSTLIB,LOADCUST'\n//SYSOUT DD SYSOUT=*",
+      "expected_output": "JCL analysis with: Job identity, Step-by-step breakdown table, Program chain identifying EXTCUST and LOADCUST as Natural programs, Data pipeline showing flow between steps, JCL-to-Adabas mapping, and Mermaid job flow diagram",
+      "files": []
+    }
+  ]
+}
