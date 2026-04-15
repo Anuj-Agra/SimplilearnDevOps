@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillForge — Skill, Agent & Script Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-row">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-title">SkillForge</div>
+          <div class="logo-sub">Skill, Agent & Script Prompt Generator — for GitHub Copilot Chat</div>
+        </div>
+      </div>
+      <div class="steps" id="steps-nav">
+        <div class="step active" data-step="0">1 · Describe</div>
+        <div class="step" data-step="1">2 · Blueprint</div>
+        <div class="step" data-step="2">3 · Generate</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main>
+    <div class="main-inner">
+
+      <!-- ── PHASE 0: DESCRIBE ── -->
+      <section id="phase-describe" class="fade-up">
+        <h2>Describe Your Problem</h2>
+        <p class="subtitle">What system do you want to build? Be specific about goals, inputs, outputs, and constraints.</p>
+
+        <textarea id="problem-input" placeholder="Example: Build an automated system that monitors Kubernetes cluster health, detects pod failures and resource bottlenecks, and sends Slack alerts with remediation suggestions..."></textarea>
+
+        <div style="margin-top:16px; margin-bottom:20px">
+          <span class="section-label">Try an example:</span>
+          <div class="examples" id="example-pills"></div>
+        </div>
+
+        <p class="subtitle" style="margin-bottom:12px">Then generate the analysis prompt to run in Copilot Chat:</p>
+        <button class="btn btn-primary" id="btn-analyze" onclick="SkillForge.generateAnalysisPrompt()">
+          Generate Analysis Prompt →
+        </button>
+      </section>
+
+      <!-- ── PHASE 1: BLUEPRINT ── -->
+      <section id="phase-blueprint" class="fade-up hidden">
+
+        <div class="workflow-steps">
+          <div class="workflow-step">
+            <div class="workflow-num">1</div>
+            <div><strong>Copy</strong> the analysis prompt below and paste it into <strong>GitHub Copilot Chat</strong>.</div>
+          </div>
+          <div class="workflow-step">
+            <div class="workflow-num">2</div>
+            <div><strong>Copy</strong> Copilot's JSON response and paste it into the box below.</div>
+          </div>
+          <div class="workflow-step">
+            <div class="workflow-num">3</div>
+            <div>Click <strong>"Parse Blueprint"</strong> to proceed to generation.</div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px">
+          <div class="panel-header">
+            <div>
+              <span class="panel-title">Analysis Prompt</span>
+              <span class="panel-ext">→ paste into Copilot Chat</span>
+            </div>
+            <button class="btn-copy" onclick="SkillForge.copyText('analysis-prompt-output', this)">Copy</button>
+          </div>
+          <pre class="code-block" id="analysis-prompt-output" style="border-radius:8px; border:1px solid var(--border); max-height:300px;"></pre>
+        </div>
+
+        <div style="margin-top:24px">
+          <div class="panel-header">
+            <span class="panel-title">Paste Copilot's JSON Response</span>
+          </div>
+          <textarea class="paste-area" id="blueprint-paste" placeholder='Paste the JSON response from Copilot Chat here...
+
+{
+  "title": "...",
+  "summary": "...",
+  "components": [...],
+  "complexity": "...",
+  "tags": [...]
+}'></textarea>
+          <div style="margin-top:12px; display:flex; gap:10px">
+            <button class="btn btn-primary" onclick="SkillForge.parseBlueprint()">Parse Blueprint →</button>
+            <button class="btn btn-secondary" onclick="SkillForge.goToPhase(0)">← Back</button>
+          </div>
+          <div id="blueprint-error" style="margin-top:10px; color:var(--error); font-size:13px;"></div>
+        </div>
+      </section>
+
+      <!-- ── PHASE 2: GENERATE ── -->
+      <section id="phase-generate" class="fade-up hidden">
+
+        <div class="card" id="blueprint-summary" style="margin-bottom:20px"></div>
+
+        <h3 id="comp-count"></h3>
+        <div id="comp-list"></div>
+
+        <div class="workflow-steps" style="margin-top:24px">
+          <div class="workflow-step">
+            <div class="workflow-num">1</div>
+            <div>Click a component tab below to see its <strong>generation prompt</strong>.</div>
+          </div>
+          <div class="workflow-step">
+            <div class="workflow-num">2</div>
+            <div><strong>Copy</strong> the prompt and paste into <strong>Copilot Chat</strong>.</div>
+          </div>
+          <div class="workflow-step">
+            <div class="workflow-num">3</div>
+            <div><strong>Paste back</strong> Copilot's output and save it.</div>
+          </div>
+        </div>
+
+        <div class="tabs" id="comp-tabs" style="margin-top:20px"></div>
+
+        <div id="active-panel" class="panel hidden"></div>
+
+        <div class="export-bar hidden" id="export-bar">
+          <div>
+            <strong style="font-size:14px">All components saved!</strong>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:2px">Download everything as a ZIP file.</div>
+          </div>
+          <button class="btn btn-primary" onclick="SkillForge.exportAll()" style="padding:10px 24px; font-size:13px;">
+            ↓ Download ZIP
+          </button>
+        </div>
+
+        <div style="margin-top:20px">
+          <button class="btn btn-secondary" onclick="SkillForge.goToPhase(0)">⚡ New Project</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- JSZip for export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- App scripts (order matters: prompts first, then app) -->
+  <script src="prompts.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
