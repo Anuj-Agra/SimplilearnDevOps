@@ -1,0 +1,4107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1280" />
+<title>Modernization Program Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+/* ---------- Design tokens ---------- */
+:root{
+  /* Brand — bright blue (variable names kept for compatibility) */
+  --navy-900:#0F172A;
+  --navy-800:#1E3A8A;
+  --navy-700:#1E40AF;
+  --navy-600:#2563EB;
+  --navy-500:#3B82F6;
+
+  /* Accent — vibrant amber */
+  --gold-600:#D97706;
+  --gold-500:#F59E0B;
+  --gold-400:#FBBF24;
+  --gold-200:#FDE68A;
+  --gold-50:#FEF3C7;
+
+  /* Surfaces — bright */
+  --paper:#F8FAFC;
+  --paper-2:#F1F5F9;
+
+  /* Text — modern slate */
+  --ink:#0F172A;
+  --ink-2:#334155;
+  --ink-3:#64748B;
+
+  /* Borders */
+  --line:#E2E8F0;
+  --line-2:#CBD5E1;
+
+  /* Semantic */
+  --red:#EF4444;
+  --amber:#F59E0B;
+  --green:#10B981;
+  --blue:#3B82F6;
+
+  /* Status colors for roadmap bars */
+  --status-done:#10B981;
+  --status-done-dark:#059669;
+  --status-done-light:#D1FAE5;
+  --status-progress:#3B82F6;
+  --status-progress-dark:#2563EB;
+  --status-progress-light:#DBEAFE;
+  --status-notstarted:#94A3B8;
+  --status-notstarted-dark:#64748B;
+  --status-notstarted-light:#E2E8F0;
+
+  --excel-green:#107C41;
+  --excel-green-dark:#0B5C30;
+
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow-1:0 1px 2px rgba(15,23,42,.04), 0 2px 8px rgba(15,23,42,.06);
+  --shadow-2:0 4px 14px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.06);
+  --font-display:"Fraunces", Georgia, serif;
+  --font-body:"Manrope", system-ui, sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font-body);
+  color:var(--ink);
+  background:
+    radial-gradient(1100px 500px at 90% -10%, rgba(245,158,11,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(59,130,246,.08), transparent 60%),
+    var(--paper);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:-.005em;
+}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:#FFFFFF;
+  color:var(--ink);
+  padding:22px 36px 20px;
+  border-bottom:1px solid var(--line);
+  position:relative;
+  overflow:hidden;
+}
+.topbar::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:0;
+  height:3px;
+  background:linear-gradient(90deg, var(--navy-600), var(--gold-500) 40%, var(--gold-400) 55%, var(--navy-600));
+}
+.brand-row{display:flex; align-items:center; justify-content:space-between; gap:24px}
+.brand{display:flex; align-items:center; gap:16px}
+.crest{
+  width:44px; height:44px; border-radius:12px;
+  background:linear-gradient(135deg, var(--navy-600) 0%, var(--navy-700) 50%, var(--navy-800) 100%);
+  display:grid; place-items:center;
+  color:#fff; font-family:var(--font-display); font-weight:700; font-size:20px;
+  box-shadow:0 6px 16px rgba(37,99,235,.35), inset 0 1px 0 rgba(255,255,255,.25);
+  letter-spacing:-.02em;
+}
+.title-block .eyebrow{
+  font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--gold-600); font-weight:700;
+}
+.title-block h1{
+  margin:2px 0 0; font-family:var(--font-display);
+  font-weight:500; font-size:26px; letter-spacing:-.01em;
+  color:var(--ink);
+}
+.meta{
+  display:flex; gap:12px; align-items:center;
+  color:var(--ink-2); font-size:12.5px;
+}
+.meta .chip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 12px; border:1px solid var(--line);
+  border-radius:999px; background:#FFFFFF;
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+}
+.meta .chip strong{ color:var(--ink) !important }
+.meta .dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+
+/* ---------- Tabs ---------- */
+.tabs{
+  display:flex; gap:2px; padding:0 28px;
+  background:#FFFFFF;
+  border-bottom:1px solid var(--line);
+  box-shadow:0 1px 0 rgba(15,23,42,.02);
+}
+.tab{
+  appearance:none; border:0; background:transparent; color:var(--ink-3);
+  font-family:var(--font-body); font-weight:600; font-size:13.5px; letter-spacing:.02em;
+  padding:14px 20px 13px; cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color .2s, border-color .2s, background .2s;
+  display:inline-flex; align-items:center; gap:10px;
+}
+.tab:hover{color:var(--ink); background:var(--paper-2)}
+.tab.active{color:var(--navy-700); border-bottom-color:var(--navy-600); background:transparent}
+.tab .tnum{
+  font-family:var(--font-display); font-style:italic;
+  color:var(--gold-600); font-weight:500; font-size:12px;
+}
+.tab.active .tnum{ color:var(--navy-600) }
+
+/* ---------- Page container ---------- */
+.page{padding:28px 36px 60px; max-width:100%;}
+.panel{display:none}
+.panel.active{display:block}
+
+.section-head{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+  padding-bottom:16px; margin-bottom:18px;
+  border-bottom:1px solid var(--line);
+}
+.section-head .lhs h2{
+  margin:0; font-family:var(--font-display); font-weight:500;
+  font-size:28px; letter-spacing:-.01em; color:var(--navy-900);
+}
+.section-head .lhs .kicker{
+  font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--gold-600); font-weight:700; margin-bottom:4px;
+}
+.section-head .rhs{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+
+.btn{
+  font-family:var(--font-body); font-size:12.5px; font-weight:600;
+  padding:8px 14px; border-radius:var(--radius-sm); cursor:pointer;
+  border:1px solid var(--line-2); background:#fff; color:var(--ink-2);
+  transition:all .15s;
+  display:inline-flex; align-items:center; gap:7px;
+  white-space:nowrap;
+}
+.btn:hover{border-color:var(--navy-500); color:var(--navy-800)}
+.btn.primary{background:var(--navy-800); color:#fff; border-color:var(--navy-800)}
+.btn.primary:hover{background:var(--navy-900); color:#fff}
+.btn svg{flex-shrink:0}
+.btn.excel{
+  background:#fff; border-color:#CFE3D6; color:var(--excel-green);
+}
+.btn.excel:hover{background:#F1FAF3; border-color:var(--excel-green); color:var(--excel-green-dark)}
+.btn.excel.filled{
+  background:var(--excel-green); color:#fff; border-color:var(--excel-green);
+}
+.btn.excel.filled:hover{background:var(--excel-green-dark); color:#fff}
+.btn.slide{
+  background:#fff; border-color:#E8CDC2; color:#A74B3C;
+}
+.btn.slide:hover{background:#FCF3EE; border-color:#A74B3C; color:#8A3B2F}
+.btn.slide.filled{
+  background:#A74B3C; color:#fff; border-color:#A74B3C;
+}
+.btn.slide.filled:hover{background:#8A3B2F; color:#fff}
+.btn.ppt{
+  background:#fff; border-color:#F0CFC6; color:#C84B31;
+}
+.btn.ppt:hover{background:#FDF4F1; border-color:#C84B31; color:#A43A24}
+.btn.ppt.filled{
+  background:#C84B31; color:#fff; border-color:#C84B31;
+  box-shadow:0 2px 6px rgba(200,75,49,.24);
+}
+.btn.ppt.filled:hover{background:#A43A24; color:#fff}
+
+/* ---------- Legend ---------- */
+.legend{display:flex; flex-wrap:wrap; gap:14px 18px; margin:4px 0 18px; font-size:12px; color:var(--ink-2)}
+.legend .li{display:inline-flex; align-items:center; gap:8px}
+.legend .sw{width:18px; height:10px; border-radius:3px; box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)}
+.legend .sw.sw-done{background:linear-gradient(180deg, #34D399, #059669)}
+.legend .sw.sw-progress{background:linear-gradient(180deg, #60A5FA, #2563EB)}
+.legend .sw.sw-notstarted{background:linear-gradient(180deg, #E2E8F0, #94A3B8)}
+.legend .sw.sw-late{background:linear-gradient(180deg, #F87171, #B91C1C)}
+.legend .sw.sw-summary{
+  background:linear-gradient(90deg, #BFDBFE 0 50%, #2563EB 50% 100%);
+  height:8px; position:relative;
+}
+.legend .sw.sw-summary::after{
+  content:"";
+  position:absolute; left:-1px; right:-1px; bottom:-3px; height:3px;
+  background:linear-gradient(to right, #1E40AF, #1E40AF);
+  clip-path:polygon(0 0, 6px 0, 0 100%, 100% 0, calc(100% - 6px) 0, 100% 100%);
+}
+.legend .sw.sw-atrisk{background:#F1F5F9; outline:2px solid var(--red); outline-offset:-1px}
+.legend .sw.sw-delayed{background:#F1F5F9; outline:2px dashed var(--amber); outline-offset:-1px}
+.legend .ms{width:8px; height:8px; transform:rotate(45deg); background:#F59E0B; border:0}
+.legend .arrow{
+  width:22px; height:8px; position:relative;
+}
+.legend .arrow::before{
+  content:""; position:absolute; inset:3px 6px 3px 0;
+  border-top:1.5px solid var(--navy-700);
+}
+.legend .arrow::after{
+  content:""; position:absolute; right:0; top:0; width:0; height:0;
+  border-left:6px solid var(--navy-700); border-top:4px solid transparent; border-bottom:4px solid transparent;
+}
+
+/* ========================================================
+   ROADMAP / GANTT
+   ======================================================== */
+.roadmap-wrap{
+  background:#fff; border:1px solid var(--line);
+  border-radius:var(--radius); box-shadow:var(--shadow-1);
+  overflow:hidden;
+}
+.gantt-scroll{ overflow:auto; max-height:72vh; position:relative }
+
+.gantt{
+  --label-w:320px;
+  --col-w:92px;
+  --row-h:44px;
+  --ws-row-h:40px;
+
+  display:grid;
+  grid-template-columns: var(--label-w) repeat(12, var(--col-w));
+  min-width: calc(var(--label-w) + 12 * var(--col-w));
+  position:relative;
+  font-size:13px;
+}
+
+.g-yearcell, .g-qcell, .g-mcell{
+  position:sticky; z-index:5;
+  background:#fff;
+  border-bottom:1px solid var(--line);
+  border-right:1px solid var(--line);
+  padding:7px 10px; font-weight:600;
+  text-align:center; font-size:12px; color:var(--navy-800);
+  letter-spacing:.04em;
+  box-sizing:border-box;
+}
+.g-yearcell{
+  top:0; height:32px;
+  font-family:var(--font-display); font-weight:500;
+  font-size:14px; letter-spacing:.12em;
+  background:linear-gradient(180deg, #EFF6FF, #DBEAFE);
+  color:var(--navy-800);
+  border-bottom:1px solid #BFDBFE;
+  padding:7px 12px;
+}
+.g-qcell{
+  top:32px; height:28px;
+  font-size:10.5px; color:var(--navy-700); font-weight:800;
+  background:linear-gradient(180deg, #DBEAFE, #BFDBFE);
+  text-transform:uppercase; letter-spacing:.22em;
+  border-bottom:1px solid #BFDBFE;
+  border-right:1px solid #BFDBFE;
+  padding:6px;
+}
+.g-mcell{
+  top:60px; height:30px;
+  font-size:11.5px; font-weight:600;
+  background:linear-gradient(180deg, #FFFFFF, #F8FAFC);
+  color:var(--navy-800);
+  padding:7px 6px;
+}
+.g-label-head{
+  position:sticky; left:0; top:0; z-index:7;
+  background:linear-gradient(180deg, #EFF6FF, #DBEAFE);
+  border-right:1px solid #BFDBFE; border-bottom:1px solid #BFDBFE;
+  padding:10px 14px;
+  font-family:var(--font-display); font-size:14px; color:var(--navy-800);
+  grid-row:1 / span 3;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.g-label-head .sub{font-family:var(--font-body); font-size:10.5px; color:var(--ink-3); letter-spacing:.14em; text-transform:uppercase}
+
+.g-lbl{
+  position:sticky; left:0; z-index:4;
+  background:#fff; border-right:1px solid var(--line);
+  padding:0 14px; display:flex; align-items:center;
+  border-bottom:1px solid var(--line);
+  height:var(--row-h);
+}
+.g-lbl.ws{
+  background:linear-gradient(90deg, #EFF6FF, #F8FAFC 70%, #FFFFFF);
+  border-left:4px solid var(--navy-600);
+  border-bottom:1px solid var(--line);
+  height:var(--ws-row-h);
+  font-family:var(--font-display); font-weight:500; font-size:14px;
+  color:var(--navy-800); letter-spacing:.01em;
+  padding-left:14px;
+}
+.g-lbl .tname{font-weight:500; color:var(--ink); font-size:13px}
+.g-lbl .tmeta{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink-3)}
+.g-lbl .owner{
+  font-family:var(--font-display); font-weight:500; font-style:italic;
+  color:var(--navy-700);
+}
+.g-lbl .pill{
+  font-size:10px; letter-spacing:.08em; padding:2px 8px; border-radius:999px;
+  background:var(--paper-2); color:var(--ink-2); border:1px solid var(--line-2);
+  text-transform:uppercase; font-weight:700;
+}
+.g-lbl .pill.green{background:#D1FAE5; color:#065F46; border-color:#A7F3D0}
+.g-lbl .pill.amber{background:#FEF3C7; color:#92400E; border-color:#FDE68A}
+.g-lbl .pill.red{background:#FEE2E2; color:#991B1B; border-color:#FCA5A5}
+
+.g-cell{
+  border-right:1px dashed var(--line);
+  border-bottom:1px solid var(--line);
+  background:#FFFFFF;
+  height:var(--row-h);
+  position:relative;
+}
+.g-cell.ws{background:#F8FAFC; height:var(--ws-row-h); border-bottom:1px solid var(--line)}
+.g-cell.q-even{background-color:#FAFBFD}
+.g-cell.q-end{border-right:1px solid var(--line-2)}
+
+.task{
+  position:absolute; top:8px; height:calc(var(--row-h) - 16px);
+  border-radius:6px;
+  display:flex; align-items:center;
+  font-size:11.5px; font-weight:600; color:#fff;
+  padding:0 8px; white-space:nowrap; overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.25) inset, 0 2px 6px rgba(15,23,42,.15);
+  pointer-events:auto; cursor:default;
+  transition:transform .15s, box-shadow .15s, filter .15s;
+  /* The bar's base color (set by status class) shows the UNFINISHED portion at lower opacity.
+     The .progress child draws an opaque fill for the COMPLETED portion on top. */
+}
+.task:hover{ transform:translateY(-1px); filter:brightness(1.05); box-shadow:0 1px 0 rgba(255,255,255,.25) inset, 0 8px 18px rgba(15,23,42,.22); z-index:3}
+.task .progress{
+  position:absolute; left:0; top:0; bottom:0;
+  background:rgba(0,0,0,.22);
+  border-right:2px solid rgba(255,255,255,.85);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18);
+  pointer-events:none;
+}
+
+/* Status-based task colors. Base color = not-yet-done tint; progress fill darkens it. */
+.task.s-done{
+  background:linear-gradient(180deg, #34D399, #059669);
+}
+.task.s-done .progress{
+  background:rgba(0,0,0,.08);
+  border-right:none;
+}
+.task.s-progress{
+  background:linear-gradient(180deg, #93C5FD, #60A5FA);
+}
+.task.s-progress .progress{
+  background:linear-gradient(180deg, #2563EB, #1E40AF);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25);
+}
+.task.s-notstarted{
+  background:linear-gradient(180deg, #E2E8F0, #CBD5E1);
+  color:#1E293B;
+}
+.task.s-notstarted .progress{
+  display:none;
+}
+.task.s-notstarted .lbl-inside{ text-shadow:0 1px 0 rgba(255,255,255,.5) !important }
+
+/* Overdue / late — computed automatically from today vs start/end */
+.task.s-late{
+  background:linear-gradient(180deg, #FCA5A5, #F87171);
+}
+.task.s-late .progress{
+  background:linear-gradient(180deg, #DC2626, #991B1B);
+  border-right:2px solid rgba(255,255,255,.85);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
+}
+.task.s-late .lbl-inside{ text-shadow:0 1px 0 rgba(127,29,29,.6) !important }
+
+.task.at-risk{ outline:2px solid var(--red); outline-offset:1px }
+.task.delayed{ outline:2px dashed var(--amber); outline-offset:1px }
+
+.task .lbl-inside{ text-shadow:0 1px 0 rgba(15,23,42,.25) }
+
+.milestone{
+  position:absolute; top:50%; width:9px; height:9px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  background:#F59E0B;
+  border:0;
+  box-shadow:0 1px 3px rgba(217,119,6,.45);
+  pointer-events:auto;
+}
+.milestone.hit{
+  background:#10B981;
+  box-shadow:0 1px 3px rgba(5,150,105,.5);
+}
+.milestone.late{
+  background:var(--red);
+  box-shadow:0 1px 4px rgba(239,68,68,.55);
+  animation:ms-pulse 2.2s ease-in-out infinite;
+}
+
+/* Inline milestone sitting on top of a parent task's bar */
+.milestone.milestone-inline{
+  width:10px; height:10px;
+  z-index:4;
+  box-shadow:
+    0 0 0 1.5px #fff,
+    0 1px 4px rgba(15,23,42,.3);
+}
+.milestone.milestone-inline.hit{
+  box-shadow:
+    0 0 0 1.5px #fff,
+    0 1px 4px rgba(5,150,105,.55);
+}
+.milestone.milestone-inline.late{
+  box-shadow:
+    0 0 0 1.5px #fff,
+    0 1px 5px rgba(239,68,68,.6);
+}
+.milestone-label.milestone-label-inline{
+  font-size:10px;
+  background:rgba(255,255,255,.95);
+  padding:1px 5px;
+  border:1px solid var(--line);
+  border-radius:3px;
+  box-shadow:0 2px 6px rgba(15,23,42,.12);
+  z-index:4;
+  pointer-events:none;
+}
+@keyframes ms-pulse{
+  0%,100%{ transform:translate(-50%,-50%) rotate(45deg) scale(1) }
+  50%{ transform:translate(-50%,-50%) rotate(45deg) scale(1.18) }
+}
+.milestone-label{
+  position:absolute; top:calc(50% + 12px);
+  font-family:var(--font-display); font-style:italic;
+  font-size:11px; color:var(--navy-700); white-space:nowrap;
+  transform:translateX(-50%);
+  background:rgba(255,255,255,.92); padding:1px 5px; border-radius:3px;
+  box-shadow:0 1px 3px rgba(15,23,42,.06);
+}
+
+.today-line{
+  position:absolute; top:0; bottom:0;
+  width:2px; background:var(--red);
+  z-index:6; pointer-events:none;
+}
+.today-line::before{
+  content:"TODAY"; position:absolute; top:-18px; left:50%;
+  transform:translateX(-50%);
+  background:var(--red); color:#fff;
+  font-size:9.5px; letter-spacing:.18em; font-weight:700;
+  padding:2px 6px; border-radius:3px;
+}
+.today-line::after{
+  content:""; position:absolute; top:-4px; left:-3px;
+  width:8px; height:8px; background:var(--red);
+  transform:rotate(45deg);
+}
+
+.dep-svg{
+  position:absolute; left:var(--label-w, 320px); top:0; right:0; bottom:0;
+  pointer-events:none;
+  z-index:2;
+}
+.dep-path{
+  fill:none; stroke:var(--navy-700); stroke-width:1.5;
+  stroke-linejoin:round; stroke-linecap:round;
+  opacity:.75;
+}
+.dep-path.finish-start{ stroke-dasharray:none }
+.dep-path.critical{ stroke:var(--red); stroke-width:1.8; opacity:.95}
+
+/* ========================================================
+   RAID LOG
+   ======================================================== */
+.raid-tabs{
+  display:inline-flex; background:#fff; border:1px solid var(--line);
+  border-radius:999px; padding:4px; margin-bottom:18px; box-shadow:var(--shadow-1);
+}
+.raid-tab{
+  border:0; background:transparent; padding:7px 16px; border-radius:999px;
+  font-family:var(--font-body); font-weight:600; font-size:12.5px; cursor:pointer;
+  color:var(--ink-2); letter-spacing:.02em;
+  display:inline-flex; align-items:center; gap:8px;
+}
+.raid-tab .count{
+  background:var(--paper-2); color:var(--ink-2); font-size:10.5px;
+  padding:1px 7px; border-radius:999px; font-weight:700;
+}
+.raid-tab.active{background:var(--navy-800); color:#fff}
+.raid-tab.active .count{background:var(--gold-500); color:var(--navy-900)}
+
+.data-table{
+  width:100%; border-collapse:separate; border-spacing:0;
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+  overflow:hidden; box-shadow:var(--shadow-1);
+  font-size:13px;
+}
+.data-table thead th{
+  background:linear-gradient(180deg, #F8FAFC, #F1F5F9);
+  color:var(--navy-800); font-family:var(--font-body); font-weight:700;
+  text-align:left; padding:12px 14px;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  border-bottom:1px solid var(--line-2);
+  white-space:nowrap;
+}
+.data-table tbody td{
+  padding:13px 14px; border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+.data-table tbody tr:hover{ background:#F8FAFC }
+.data-table tbody tr:last-child td{ border-bottom:0 }
+.data-table .id-cell{
+  font-family:var(--font-display); font-style:italic; font-weight:500;
+  color:var(--navy-700); width:78px;
+}
+.data-table .title-cell{ font-weight:600; color:var(--navy-800) }
+.data-table .desc{ color:var(--ink-3); font-size:12px; margin-top:3px }
+
+.sev, .status-pill, .kind-pill{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase;
+  border:1px solid transparent;
+}
+.sev.high{ background:#FEE2E2; color:#991B1B; border-color:#FCA5A5}
+.sev.med{  background:#FEF3C7; color:#92400E; border-color:#FDE68A}
+.sev.low{  background:#D1FAE5; color:#065F46; border-color:#A7F3D0}
+
+.status-pill.open{ background:#FEE2E2; color:#991B1B; border-color:#FCA5A5}
+.status-pill.progress{ background:#DBEAFE; color:#1E40AF; border-color:#93C5FD}
+.status-pill.mitigated{ background:#D1FAE5; color:#065F46; border-color:#A7F3D0}
+.status-pill.closed{ background:#F1F5F9; color:var(--ink-3); border-color:#CBD5E1}
+.status-pill.accepted{ background:#EDE9FE; color:#5B21B6; border-color:#C4B5FD}
+.status-pill.done{ background:#D1FAE5; color:#065F46; border-color:#A7F3D0}
+
+.kind-pill.risk{background:#FEE2E2; color:#991B1B; border-color:#FCA5A5}
+.kind-pill.assumption{background:#DBEAFE; color:#1E40AF; border-color:#93C5FD}
+.kind-pill.issue{background:#FEF3C7; color:#92400E; border-color:#FDE68A}
+.kind-pill.dependency{background:#EDE9FE; color:#5B21B6; border-color:#C4B5FD}
+
+.owner-cell{ display:inline-flex; align-items:center; gap:8px }
+.avatar{
+  width:26px; height:26px; border-radius:50%;
+  background:linear-gradient(135deg, var(--gold-500), var(--navy-600));
+  color:#fff; display:inline-grid; place-items:center; font-weight:700;
+  font-size:11px; letter-spacing:.03em;
+  box-shadow:inset 0 0 0 1.5px #fff, 0 2px 6px rgba(15,23,42,.12);
+}
+
+/* ========================================================
+   TRACKER
+   ======================================================== */
+.tracker-grid{
+  display:grid; grid-template-columns: repeat(4, 1fr);
+  gap:14px; margin-bottom:20px;
+}
+.stat-card{
+  background:#fff; border:1px solid var(--line);
+  border-radius:var(--radius); padding:16px 18px;
+  box-shadow:var(--shadow-1); position:relative; overflow:hidden;
+}
+.stat-card::after{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:linear-gradient(180deg, var(--gold-500), var(--gold-600));
+}
+.stat-card .k{font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-3); font-weight:700}
+.stat-card .v{font-family:var(--font-display); font-weight:500; font-size:34px; color:var(--navy-800); line-height:1.1; margin-top:6px}
+.stat-card .d{font-size:12px; color:var(--ink-3); margin-top:4px}
+.stat-card .d .up{color:var(--green); font-weight:700}
+.stat-card .d .down{color:var(--red); font-weight:700}
+
+.progress-bar{
+  height:6px; background:var(--paper-2); border-radius:999px; margin-top:10px; overflow:hidden;
+}
+.progress-bar > span{
+  display:block; height:100%; border-radius:999px;
+  background:linear-gradient(90deg, var(--gold-500), var(--gold-400));
+}
+.progress-bar.g > span{ background:linear-gradient(90deg, var(--green), #34D399)}
+.progress-bar.r > span{ background:linear-gradient(90deg, var(--red), #FCA5A5)}
+
+.tracker-progress{
+  display:flex; align-items:center; gap:10px; min-width:150px;
+}
+.tracker-progress .bar{flex:1}
+.tracker-progress .pct{font-family:var(--font-display); font-style:italic; font-weight:500; font-size:13px; color:var(--navy-800); width:36px; text-align:right}
+
+/* ========================================================
+   KPI DASHBOARD
+   ======================================================== */
+.kpi-grid{
+  display:grid; grid-template-columns: 1.3fr 1fr;
+  gap:20px; margin-bottom:20px;
+}
+.card{
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+  padding:20px 22px; box-shadow:var(--shadow-1);
+}
+.card h3{
+  margin:0 0 4px; font-family:var(--font-display); font-weight:500;
+  font-size:18px; color:var(--navy-900);
+}
+.card .sub{font-size:11.5px; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase; font-weight:600}
+.card .divider{height:1px; background:var(--line); margin:14px 0}
+.chart-holder{position:relative; height:280px}
+.chart-holder.sm{height:220px}
+
+.kpi-top{
+  display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-bottom:20px;
+}
+
+.split-charts{
+  display:grid; grid-template-columns: 1fr 1fr; gap:20px;
+}
+
+/* ---------- Countdown clock ---------- */
+.countdown-panel{
+  background:
+    radial-gradient(600px 200px at 85% -20%, rgba(251,191,36,.20), transparent 70%),
+    linear-gradient(135deg, #1E3A8A 0%, #1E40AF 55%, #2563EB 100%);
+  color:#fff;
+  border-radius:var(--radius);
+  padding:18px 24px 20px;
+  margin-bottom:18px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 8px 24px rgba(37,99,235,.20);
+  border:1px solid rgba(251,191,36,.28);
+}
+.countdown-panel::before{
+  content:"";
+  position:absolute; left:0; top:0; bottom:0;
+  width:3px;
+  background:linear-gradient(180deg, var(--gold-400), var(--gold-600));
+}
+.cd-head{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+  padding-bottom:14px; margin-bottom:14px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  flex-wrap:wrap;
+}
+.cd-title .cd-kicker{
+  display:block; font-size:10px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--gold-400); font-weight:700; margin-bottom:6px;
+}
+.cd-title .cd-date{
+  font-family:var(--font-display); font-weight:500; font-size:18px; color:#fff;
+  letter-spacing:.01em;
+  font-variant-numeric:tabular-nums;
+}
+.cd-title .cd-time-seconds{
+  font-family:var(--font-body); font-size:15px; color:var(--gold-400);
+  font-variant-numeric:tabular-nums; font-weight:500; margin-left:8px;
+}
+.cd-target{
+  font-size:12.5px; color:rgba(255,255,255,.72); text-align:right;
+  line-height:1.5;
+}
+.cd-target strong{color:var(--gold-400); font-weight:600}
+.cd-target em{font-style:normal; font-family:var(--font-display); font-style:italic; color:#fff}
+.cd-grid{
+  display:grid; grid-template-columns:repeat(4, 1fr);
+  align-items:center;
+}
+.cd-item{
+  text-align:center; padding:4px 16px;
+  position:relative;
+}
+.cd-item + .cd-item::before{
+  content:""; position:absolute; left:0; top:14%; bottom:14%; width:1px;
+  background:linear-gradient(to bottom, transparent, rgba(255,255,255,.18), transparent);
+}
+.cd-val{
+  font-family:var(--font-display); font-weight:500;
+  font-size:44px; color:var(--gold-400);
+  line-height:1; letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;
+}
+.cd-lbl{
+  font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(255,255,255,.65); font-weight:700;
+  margin-top:10px;
+}
+.cd-foot{
+  font-size:10.5px; color:rgba(255,255,255,.45); letter-spacing:.05em;
+  text-align:center; margin-top:10px; padding-top:10px;
+  border-top:1px dashed rgba(255,255,255,.08);
+}
+
+/* Live countdown ticker (D:H:M:S) */
+.cd-ticker-wrap{
+  margin:14px 0 16px;
+  padding:18px 0 14px;
+  border-top:1px solid rgba(255,255,255,.10);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  text-align:center;
+  background:radial-gradient(600px 150px at 50% 50%, rgba(251,191,36,.10), transparent 70%);
+}
+.cd-ticker{
+  display:flex; justify-content:center; align-items:flex-end;
+  gap:10px;
+}
+.cd-ticker-unit{
+  display:flex; flex-direction:column; align-items:center;
+  min-width:92px;
+}
+.cd-ticker-val{
+  font-family:var(--font-display); font-weight:500;
+  font-size:56px; line-height:1;
+  color:#FFFFFF;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.025em;
+  text-shadow:0 2px 12px rgba(15,23,42,.35);
+}
+.cd-ticker-unit:last-child .cd-ticker-val{
+  color:var(--gold-400);
+}
+.cd-ticker-lbl{
+  font-size:10px; letter-spacing:.28em; text-transform:uppercase;
+  color:rgba(255,255,255,.60); font-weight:700;
+  margin-top:10px;
+}
+.cd-ticker-sep{
+  font-family:var(--font-display); font-weight:500;
+  font-size:42px; line-height:1;
+  color:var(--gold-400);
+  padding-bottom:24px;
+  font-variant-numeric:tabular-nums;
+  animation:cdBlink 1.6s ease-in-out infinite;
+}
+@keyframes cdBlink{
+  0%, 45%{ opacity:.75 }
+  55%, 100%{ opacity:.25 }
+}
+.cd-ticker-caption{
+  font-size:10.5px; letter-spacing:.28em; text-transform:uppercase;
+  color:var(--gold-400); font-weight:700;
+  margin-top:12px;
+}
+
+/* ---------- Scrollbar ---------- */
+.gantt-scroll::-webkit-scrollbar{ height:12px; width:12px }
+.gantt-scroll::-webkit-scrollbar-thumb{ background:var(--navy-500); border-radius:6px; border:3px solid #fff }
+.gantt-scroll::-webkit-scrollbar-track{ background:#fff }
+
+/* ---------- Toast ---------- */
+#toastStack{
+  position:fixed; bottom:24px; right:24px; z-index:1000;
+  display:flex; flex-direction:column; gap:10px; pointer-events:none;
+}
+.toast{
+  background:var(--navy-900); color:#fff;
+  padding:12px 18px 12px 14px; border-radius:8px;
+  font-size:13px; font-weight:500;
+  box-shadow:0 10px 28px rgba(0,0,0,.28);
+  border-left:3px solid var(--gold-500);
+  display:flex; align-items:center; gap:10px;
+  min-width:260px; max-width:380px;
+  pointer-events:auto;
+  animation:toast-in .28s cubic-bezier(.2,.9,.3,1);
+}
+.toast.success{ border-left-color:var(--excel-green) }
+.toast.error{ border-left-color:var(--red) }
+.toast.fadeout{ animation:toast-out .28s forwards }
+@keyframes toast-in{
+  from{opacity:0; transform:translateX(18px)}
+  to{opacity:1; transform:translateX(0)}
+}
+@keyframes toast-out{
+  to{opacity:0; transform:translateX(18px)}
+}
+
+/* ---------- Row actions & edit affordances ---------- */
+.actions-cell{
+  text-align:center;
+  padding:6px 8px !important;
+  width:52px;
+}
+.row-btn{
+  background:transparent; border:1px solid transparent;
+  padding:5px 7px; border-radius:5px;
+  cursor:pointer; color:var(--ink-3);
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:all .15s;
+}
+.row-btn:hover{
+  background:var(--paper-2); color:var(--navy-700);
+  border-color:var(--line-2);
+}
+
+.btn.edit-new{
+  background:#EFF6FF; border-color:#BFDBFE; color:var(--navy-800);
+}
+.btn.edit-new:hover{
+  background:#DBEAFE; border-color:var(--navy-600); color:var(--navy-900);
+}
+
+.g-lbl[data-task-id]{
+  cursor:pointer;
+  transition:background .15s;
+}
+.g-lbl[data-task-id]:hover{
+  background:#F1F5F9;
+}
+.g-lbl.ws[data-ws-id]{ cursor:pointer }
+.g-lbl.ws[data-ws-id]:hover{ filter:brightness(0.97) }
+.task{ cursor:pointer }
+.milestone{ cursor:pointer }
+
+.g-lbl.sub-subtask, .g-lbl.sub-subtask-deep{
+  background:#FDFEFF;
+}
+.g-lbl.sub-subtask .tname, .g-lbl.sub-subtask-deep .tname{
+  font-size:12px;
+  color:var(--ink-2);
+  font-weight:500;
+}
+.g-lbl.sub-subtask .owner, .g-lbl.sub-subtask-deep .owner{
+  font-size:10px; opacity:.75;
+}
+.g-lbl.sub-subtask-deep .tname{
+  font-size:11.5px; opacity:.92;
+}
+.g-lbl.sub-milestone, .g-lbl.sub-milestone-deep{
+  background:#FDFEFF;
+}
+.g-lbl.sub-milestone .tname, .g-lbl.sub-milestone-deep .tname{
+  font-size:12px;
+  color:var(--ink-2);
+}
+
+/* Slightly thinner bars on subtask rows (positioning handled in JS) */
+.task.subtask-bar{
+  font-size:10.5px;
+}
+
+/* Summary bar — MS-Project-style rolled-up parent when it has subtasks.
+   Uses a LIGHTER tint of the rolled-up status color; the .progress child
+   shows the saturated fill for the completed portion. */
+.task.summary-bar{
+  border-radius:2px;
+  box-shadow:0 1px 0 rgba(255,255,255,.3) inset, 0 2px 4px rgba(15,23,42,.15);
+}
+
+/* Status-specific lighter tints for summary bars */
+.task.summary-bar.s-done{
+  background:linear-gradient(180deg, #A7F3D0, #6EE7B7) !important;
+  color:#064E3B;
+}
+.task.summary-bar.s-done .progress{
+  background:linear-gradient(180deg, #34D399, #059669);
+  border-right:2px solid rgba(255,255,255,.9);
+}
+
+.task.summary-bar.s-progress{
+  background:linear-gradient(180deg, #DBEAFE, #BFDBFE) !important;
+  color:#1E3A8A;
+}
+.task.summary-bar.s-progress .progress{
+  background:linear-gradient(180deg, #60A5FA, #2563EB);
+  border-right:2px solid rgba(255,255,255,.9);
+}
+
+.task.summary-bar.s-notstarted{
+  background:linear-gradient(180deg, #F1F5F9, #E2E8F0) !important;
+  color:#334155;
+}
+.task.summary-bar.s-notstarted .progress{
+  display:none;
+}
+
+.task.summary-bar.s-late{
+  background:linear-gradient(180deg, #FECACA, #FCA5A5) !important;
+  color:#7F1D1D;
+  outline:none;
+}
+.task.summary-bar.s-late .progress{
+  background:linear-gradient(180deg, #F87171, #DC2626);
+  border-right:2px solid rgba(255,255,255,.9);
+}
+
+/* Triangular end-caps for the summary bar — tint matched to status */
+.task.summary-bar::before,
+.task.summary-bar::after{
+  content:"";
+  position:absolute;
+  bottom:-5px;
+  width:8px;
+  height:5px;
+  background:currentColor;
+  opacity:.7;
+}
+.task.summary-bar::before{
+  left:0;
+  clip-path:polygon(0 0, 100% 0, 0 100%);
+}
+.task.summary-bar::after{
+  right:0;
+  clip-path:polygon(0 0, 100% 0, 100% 100%);
+}
+.task.summary-bar.s-done::before, .task.summary-bar.s-done::after{ background:#059669 }
+.task.summary-bar.s-progress::before, .task.summary-bar.s-progress::after{ background:#2563EB }
+.task.summary-bar.s-notstarted::before, .task.summary-bar.s-notstarted::after{ background:#64748B }
+.task.summary-bar.s-late::before, .task.summary-bar.s-late::after{ background:#DC2626 }
+
+.task.summary-bar .lbl-inside{
+  text-shadow:0 1px 0 rgba(255,255,255,.5) !important;
+  font-weight:700;
+  font-size:11px;
+}
+/* Mid-level summary (subtask with its own subtasks) inherits the same
+   lighter-status tints — just slightly slimmer by the inline JS styling */
+.task.subtask-bar.summary-bar{
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 1px 3px rgba(15,23,42,.12);
+}
+
+/* Workstream-level rollup bar — sits on the workstream header row */
+.task.ws-bar{
+  border-radius:3px;
+  opacity:.88;
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 1px 2px rgba(15,23,42,.08);
+}
+.task.ws-bar.s-done{
+  background:linear-gradient(180deg, #A7F3D0, #6EE7B7) !important;
+}
+.task.ws-bar.s-done .progress{
+  background:linear-gradient(180deg, #34D399, #059669);
+  border-right:2px solid rgba(255,255,255,.85);
+}
+.task.ws-bar.s-progress{
+  background:linear-gradient(180deg, #DBEAFE, #BFDBFE) !important;
+}
+.task.ws-bar.s-progress .progress{
+  background:linear-gradient(180deg, #60A5FA, #2563EB);
+  border-right:2px solid rgba(255,255,255,.85);
+}
+.task.ws-bar.s-notstarted{
+  background:linear-gradient(180deg, #F1F5F9, #E2E8F0) !important;
+}
+.task.ws-bar.s-notstarted .progress{ display:none }
+.task.ws-bar.s-late{
+  background:linear-gradient(180deg, #FECACA, #FCA5A5) !important;
+  outline:none;
+}
+.task.ws-bar.s-late .progress{
+  background:linear-gradient(180deg, #F87171, #DC2626);
+  border-right:2px solid rgba(255,255,255,.85);
+}
+.task.ws-bar::before,
+.task.ws-bar::after{ display:none }
+
+/* Small inline % label sitting next to the workstream bar */
+.ws-bar-pct{
+  position:absolute;
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:11px;
+  font-weight:500;
+  color:var(--navy-700);
+  pointer-events:none;
+  z-index:3;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Collapse/expand chevron for workstream and parent-task rows */
+.collapse-toggle{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px;
+  margin-right:6px;
+  border-radius:3px;
+  font-size:11px; line-height:1;
+  color:var(--ink-3);
+  cursor:pointer;
+  user-select:none;
+  transition:background .15s, color .15s;
+  flex-shrink:0;
+}
+.collapse-toggle:hover{
+  background:var(--paper-2);
+  color:var(--navy-700);
+}
+.g-lbl.ws .collapse-toggle{
+  color:var(--navy-700);
+}
+.g-lbl.ws .collapse-toggle:hover{
+  background:#DBEAFE;
+  color:var(--navy-900);
+}
+
+/* ---------- Edit Drawer ---------- */
+.drawer-overlay{
+  position:fixed; inset:0;
+  background:rgba(15,23,42,.38);
+  opacity:0; pointer-events:none;
+  transition:opacity .25s;
+  z-index:1100;
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+}
+.drawer-overlay.open{ opacity:1; pointer-events:auto }
+.drawer{
+  position:fixed; top:0; right:0; bottom:0;
+  width:480px; max-width:92vw;
+  background:#FFFFFF;
+  box-shadow:-14px 0 42px rgba(15,23,42,.20);
+  transform:translateX(100%);
+  transition:transform .32s cubic-bezier(.3,.9,.3,1);
+  display:flex; flex-direction:column;
+}
+.drawer-overlay.open .drawer{ transform:translateX(0) }
+.drawer-head{
+  padding:22px 24px 18px;
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px;
+  background:linear-gradient(180deg,#FFFFFF,#F8FAFC);
+}
+.drawer-kicker{
+  font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--gold-600); font-weight:700;
+}
+.drawer-head h3{
+  margin:4px 0 0;
+  font-family:var(--font-display);
+  font-weight:500; font-size:22px;
+  color:var(--ink);
+  letter-spacing:-.01em;
+  line-height:1.25;
+}
+.drawer-close{
+  background:transparent; border:0;
+  font-size:28px; line-height:1;
+  color:var(--ink-3); cursor:pointer;
+  padding:0; border-radius:4px;
+  width:32px; height:32px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.drawer-close:hover{ color:var(--ink); background:var(--paper-2) }
+.drawer-note{
+  padding:10px 24px;
+  background:#FEF3C7;
+  border-bottom:1px solid #FDE68A;
+  color:#78350F;
+  font-size:12px;
+}
+.drawer-body{
+  flex:1; overflow-y:auto;
+  padding:20px 24px 24px;
+}
+.drawer-field{ margin-bottom:16px }
+.drawer-field > label{
+  display:block;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:700; margin-bottom:6px;
+}
+.drawer-field input[type="text"],
+.drawer-field input[type="number"],
+.drawer-field input[type="date"],
+.drawer-field select,
+.drawer-field textarea{
+  width:100%;
+  padding:9px 12px;
+  border:1px solid var(--line-2);
+  border-radius:6px;
+  font-family:inherit;
+  font-size:14px;
+  background:#FFFFFF;
+  color:var(--ink);
+  outline:none;
+  transition:border-color .15s, box-shadow .15s;
+  font-variant-numeric:tabular-nums;
+}
+.drawer-field input:focus,
+.drawer-field select:focus,
+.drawer-field textarea:focus{
+  border-color:var(--navy-600);
+  box-shadow:0 0 0 3px rgba(37,99,235,.15);
+}
+.drawer-field textarea{
+  min-height:80px; resize:vertical;
+  line-height:1.5;
+}
+.drawer-field .checkbox-wrap{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  background:var(--paper-2);
+  border-radius:6px;
+  cursor:pointer;
+  border:1px solid var(--line);
+  transition:all .15s;
+  user-select:none;
+}
+.drawer-field .checkbox-wrap:hover{
+  background:#DBEAFE;
+  border-color:var(--navy-500);
+}
+.drawer-field .checkbox-wrap input[type="checkbox"]{
+  width:auto; margin:0;
+  accent-color:var(--navy-600);
+  transform:scale(1.15);
+}
+.drawer-field .checkbox-wrap span{
+  font-size:13.5px; font-weight:500; color:var(--ink);
+}
+.drawer-foot{
+  padding:14px 24px;
+  border-top:1px solid var(--line);
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--paper-2);
+}
+.drawer-foot .foot-right{ display:flex; gap:10px }
+.drawer-foot .btn.danger{
+  color:var(--red); border-color:#FCA5A5; background:#fff;
+}
+.drawer-foot .btn.danger:hover{
+  background:#FEE2E2; color:#991B1B; border-color:var(--red);
+}
+.drawer-info-note{
+  margin-bottom:16px;
+  padding:12px 14px;
+  background:#EFF6FF;
+  border-left:3px solid var(--navy-600);
+  border-radius:4px;
+  color:var(--navy-800);
+  font-size:13px;
+  line-height:1.5;
+}
+
+/* ---------- Footer ---------- */
+footer{
+  text-align:center; font-size:11.5px; color:var(--ink-3);
+  padding:20px 0 8px; letter-spacing:.06em;
+}
+footer em{font-family:var(--font-display); color:var(--navy-700)}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="brand-row">
+    <div class="brand">
+      <div class="crest">M</div>
+      <div class="title-block">
+        <div class="eyebrow">Program Control Tower · FY25–FY27</div>
+        <h1>Mainframe Modernization Program Planner</h1>
+      </div>
+    </div>
+    <div class="meta">
+      <span class="chip"><span class="dot"></span>Program Status: <strong style="color:#fff;margin-left:4px">On Track</strong></span>
+      <span class="chip">Reporting Period: <strong style="color:#fff;margin-left:4px">Q2 FY26</strong></span>
+      <span class="chip chip-remaining"><span class="dot" style="background:var(--gold-500);box-shadow:0 0 0 3px rgba(245,158,11,.2)"></span>Time Remaining: <strong style="color:#fff;margin-left:4px;font-variant-numeric:tabular-nums" id="topbarRemaining">—</strong></span>
+    </div>
+  </div>
+</header>
+
+<!-- TABS -->
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-panel="roadmap"><span class="tnum">01</span> Roadmap</button>
+  <button class="tab" data-panel="raid"><span class="tnum">02</span> RAID Log</button>
+  <button class="tab" data-panel="tracker"><span class="tnum">03</span> Key Items Tracker</button>
+  <button class="tab" data-panel="kpi"><span class="tnum">04</span> KPI Dashboard</button>
+</nav>
+
+<div class="page">
+
+  <!-- PANEL 1 — ROADMAP -->
+  <section class="panel active" id="roadmap" role="tabpanel">
+    <div class="section-head">
+      <div class="lhs">
+        <div class="kicker">Strategic Roadmap</div>
+        <h2>Workstream Timeline &amp; Dependencies</h2>
+      </div>
+      <div class="rhs">
+        <button class="btn ppt filled" data-action="summary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="2"/>
+            <path d="M3 9h18M12 18v3M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Export Summary Slide
+        </button>
+        <button class="btn excel" data-action="import">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Upload Excel
+        </button>
+        <button class="btn excel filled" data-action="export">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 20V8m0 0l-4 4m4-4l4 4M5 4h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Download Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="countdown-panel" id="countdownPanel" aria-live="polite">
+      <div class="cd-head">
+        <div class="cd-title">
+          <span class="cd-kicker">Live Program Clock · 2026</span>
+          <div>
+            <span class="cd-date" id="cdDate">—</span><span class="cd-time-seconds" id="cdTime">—</span>
+          </div>
+        </div>
+        <div class="cd-target">
+          Countdown to <strong>December 31, 2026</strong><br/>
+          <em>end of program year</em>
+        </div>
+      </div>
+
+      <!-- Live D:H:M:S ticker counting down to end of 2026 -->
+      <div class="cd-ticker-wrap">
+        <div class="cd-ticker">
+          <div class="cd-ticker-unit">
+            <div class="cd-ticker-val" id="cdTickerD">—</div>
+            <div class="cd-ticker-lbl">Days</div>
+          </div>
+          <div class="cd-ticker-sep">:</div>
+          <div class="cd-ticker-unit">
+            <div class="cd-ticker-val" id="cdTickerH">—</div>
+            <div class="cd-ticker-lbl">Hours</div>
+          </div>
+          <div class="cd-ticker-sep">:</div>
+          <div class="cd-ticker-unit">
+            <div class="cd-ticker-val" id="cdTickerM">—</div>
+            <div class="cd-ticker-lbl">Minutes</div>
+          </div>
+          <div class="cd-ticker-sep">:</div>
+          <div class="cd-ticker-unit">
+            <div class="cd-ticker-val" id="cdTickerS">—</div>
+            <div class="cd-ticker-lbl">Seconds</div>
+          </div>
+        </div>
+        <div class="cd-ticker-caption">Time Remaining Until December 31, 2026</div>
+      </div>
+
+      <div class="cd-grid">
+        <div class="cd-item">
+          <div class="cd-val" id="cdWorkDays">—</div>
+          <div class="cd-lbl">Working Days</div>
+        </div>
+        <div class="cd-item">
+          <div class="cd-val" id="cdWorkHours">—</div>
+          <div class="cd-lbl">Working Hours</div>
+        </div>
+        <div class="cd-item">
+          <div class="cd-val" id="cdCalDays">—</div>
+          <div class="cd-lbl">Calendar Days</div>
+        </div>
+        <div class="cd-item">
+          <div class="cd-val" id="cdCalWeeks">—</div>
+          <div class="cd-lbl">Calendar Weeks</div>
+        </div>
+      </div>
+      <div class="cd-foot">
+        Working days exclude weekends (Mon–Fri only). Working hours assume 8 hours per working day.
+      </div>
+    </div>
+
+    <div class="legend" aria-hidden="true">
+      <span class="li"><span class="sw sw-done"></span>Completed</span>
+      <span class="li"><span class="sw sw-progress"></span>In Progress</span>
+      <span class="li"><span class="sw sw-notstarted"></span>Not Started</span>
+      <span class="li"><span class="sw sw-summary"></span>Summary (rolled up)</span>
+      <span class="li"><span class="sw sw-late"></span>Overdue</span>
+      <span class="li"><span class="sw sw-atrisk"></span>At Risk</span>
+      <span class="li"><span class="sw sw-delayed"></span>Delayed</span>
+      <span class="li"><span class="ms"></span>Milestone</span>
+      <span class="li"><span class="arrow"></span>Finish → Start</span>
+    </div>
+
+    <div class="roadmap-wrap">
+      <div class="gantt-scroll" id="ganttScroll">
+        <div class="gantt" id="gantt"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL 2 — RAID -->
+  <section class="panel" id="raid" role="tabpanel">
+    <div class="section-head">
+      <div class="lhs">
+        <div class="kicker">Risk · Assumption · Issue · Dependency</div>
+        <h2>RAID Log</h2>
+      </div>
+      <div class="rhs">
+        <button class="btn ppt filled" data-action="summary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M12 18v3M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Export Summary Slide
+        </button>
+        <button class="btn excel" data-action="import">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Upload Excel
+        </button>
+        <button class="btn excel filled" data-action="export">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20V8m0 0l-4 4m4-4l4 4M5 4h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="raid-tabs" role="tablist" id="raidFilter">
+      <button class="raid-tab active" data-kind="all">All <span class="count" id="cnt-all">0</span></button>
+      <button class="raid-tab" data-kind="risk">Risks <span class="count" id="cnt-risk">0</span></button>
+      <button class="raid-tab" data-kind="assumption">Assumptions <span class="count" id="cnt-assumption">0</span></button>
+      <button class="raid-tab" data-kind="issue">Issues <span class="count" id="cnt-issue">0</span></button>
+      <button class="raid-tab" data-kind="dependency">Dependencies <span class="count" id="cnt-dependency">0</span></button>
+    </div>
+
+    <table class="data-table" id="raidTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Type</th><th>Title</th><th>Workstream</th>
+          <th>Severity</th><th>Owner</th><th>Status</th><th>Target Date</th>
+          <th style="width:52px;text-align:center"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- PANEL 3 — TRACKER -->
+  <section class="panel" id="tracker" role="tabpanel">
+    <div class="section-head">
+      <div class="lhs">
+        <div class="kicker">Delivery Tracker</div>
+        <h2>Key Items &amp; Deliverables</h2>
+      </div>
+      <div class="rhs">
+        <button class="btn ppt filled" data-action="summary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M12 18v3M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Export Summary Slide
+        </button>
+        <button class="btn excel" data-action="import">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Upload Excel
+        </button>
+        <button class="btn excel filled" data-action="export">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20V8m0 0l-4 4m4-4l4 4M5 4h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="tracker-grid">
+      <div class="stat-card">
+        <div class="k">Total Items</div>
+        <div class="v" id="stat-total">—</div>
+        <div class="d">across 8 workstreams</div>
+      </div>
+      <div class="stat-card">
+        <div class="k">Completed</div>
+        <div class="v" id="stat-done">—</div>
+        <div class="d"><span class="up">▲ 12%</span> vs last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="k">In Progress</div>
+        <div class="v" id="stat-prog">—</div>
+        <div class="d">of which 4 at risk</div>
+      </div>
+      <div class="stat-card">
+        <div class="k">Overdue</div>
+        <div class="v" id="stat-over" style="color:var(--red)">—</div>
+        <div class="d"><span class="down">▼ 2</span> vs last week</div>
+      </div>
+    </div>
+
+    <table class="data-table" id="trackerTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Deliverable</th><th>Workstream</th><th>Owner</th>
+          <th>Status</th><th>Progress</th><th>Due</th>
+          <th style="width:52px;text-align:center"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- PANEL 4 — KPI -->
+  <section class="panel" id="kpi" role="tabpanel">
+    <div class="section-head">
+      <div class="lhs">
+        <div class="kicker">Executive Dashboard</div>
+        <h2>Program KPIs &amp; Health</h2>
+      </div>
+      <div class="rhs">
+        <button class="btn ppt filled" data-action="summary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M12 18v3M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Export Summary Slide
+        </button>
+        <button class="btn excel" data-action="import">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Upload Excel
+        </button>
+        <button class="btn excel filled" data-action="export">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20V8m0 0l-4 4m4-4l4 4M5 4h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="kpi-top" id="kpiSummaryGrid"></div>
+
+    <div class="kpi-grid">
+      <div class="card">
+        <div class="sub">Trend</div>
+        <h3>Planned vs Actual Progress</h3>
+        <div class="divider"></div>
+        <div class="chart-holder"><canvas id="chartLine"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="sub">Allocation</div>
+        <h3>Effort by Workstream</h3>
+        <div class="divider"></div>
+        <div class="chart-holder"><canvas id="chartPie"></canvas></div>
+      </div>
+    </div>
+
+    <div class="split-charts" style="margin-top:20px">
+      <div class="card">
+        <div class="sub">RAID Health</div>
+        <h3>Open Items by Type</h3>
+        <div class="divider"></div>
+        <div class="chart-holder sm"><canvas id="chartRaid"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="sub">Delivery Velocity</div>
+        <h3>Deliverables per Month</h3>
+        <div class="divider"></div>
+        <div class="chart-holder sm"><canvas id="chartBar"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>© FY26 Program Management Office · <em>Generated by the Modernization Control Tower</em></footer>
+
+<!-- Hidden file input & toast -->
+<input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" />
+<div id="toastStack" aria-live="polite"></div>
+
+<!-- Edit Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" aria-hidden="true">
+  <aside class="drawer" id="drawer" role="dialog" aria-labelledby="drawerTitle" aria-modal="true">
+    <header class="drawer-head">
+      <div>
+        <div class="drawer-kicker" id="drawerKicker">Edit</div>
+        <h3 id="drawerTitle">—</h3>
+      </div>
+      <button class="drawer-close" id="drawerClose" aria-label="Close">×</button>
+    </header>
+    <div class="drawer-note" id="drawerNote" style="display:none"></div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <footer class="drawer-foot">
+      <button class="btn danger" id="drawerDelete">Delete</button>
+      <div class="foot-right">
+        <button class="btn" id="drawerCancel">Cancel</button>
+        <button class="btn primary" id="drawerSave">Save</button>
+      </div>
+    </footer>
+  </aside>
+</div>
+
+<script>
+/* ============================================================
+   MUTABLE DATA
+   ============================================================ */
+let workstreams = [
+  { id:'ws1', name:'1. Foundation & Assessment',        theme:'t-foundation',   owner:'A. Agrawal', health:'green' },
+  { id:'ws2', name:'2. Architecture & Target State',    theme:'t-architecture', owner:'R. Kapoor',  health:'green' },
+  { id:'ws3', name:'3. Data Migration (ADABAS → MDM)',  theme:'t-data',         owner:'S. Menon',   health:'amber' },
+  { id:'ws4', name:'4. Application Re-platforming',     theme:'t-app',          owner:'J. Coutts',  health:'green' },
+  { id:'ws5', name:'5. Integration & API Fabric',       theme:'t-integration',  owner:'M. Duarte',  health:'amber' },
+  { id:'ws6', name:'6. Testing & Quality Assurance',    theme:'t-testing',      owner:'E. Park',    health:'green' },
+  { id:'ws7', name:'7. Cutover & Decommission',         theme:'t-cutover',      owner:'D. Okafor',  health:'red'   },
+  { id:'ws8', name:'8. Change Mgmt & Training',         theme:'t-change',       owner:'L. Chen',    health:'green' }
+];
+
+let tasks = [
+  // 1. Foundation — completing in early 2026
+  { id:'T1.1', wsId:'ws1', name:'Current-State Assessment Finalization',      start:0.0, end:0.8,  progress:100 },
+  { id:'T1.2', wsId:'ws1', name:'Business Capability Mapping',                start:0.0, end:1.2,  progress:100 },
+  { id:'T1.3', wsId:'ws1', name:'TCO / Business Case Refresh',                start:0.5, end:2.0,  progress:95  },
+  { id:'M1',   wsId:'ws1', name:'Phase 0 Gate',                                milestone:true, at:2.0, hit:true, parentId:'T1.3' },
+
+  // 2. Architecture — Jan to Jul
+  { id:'T2.1', wsId:'ws2', name:'Target Reference Architecture',              start:0.0, end:3.0,  progress:90 },
+  { id:'T2.2', wsId:'ws2', name:'Domain Decomposition & Bounded Contexts',    start:1.0, end:4.5,  progress:70 },
+  { id:'T2.3', wsId:'ws2', name:'Security & Compliance Blueprint',            start:2.5, end:6.5,  progress:55 },
+  { id:'M2',   wsId:'ws2', name:'Architecture Sign-off',                       milestone:true, at:6.5, hit:false, parentId:'T2.3' },
+
+  // 3. Data Migration — Feb to Dec
+  { id:'T3.1', wsId:'ws3', name:'ADABAS Schema Discovery & Cataloging',       start:1.5, end:4.0,  progress:80, atRisk:true },
+  { id:'T3.2', wsId:'ws3', name:'Golden Record Rules & LEI/BIC/ISIN Mapping', start:3.0, end:7.0,  progress:45 },
+  { id:'T3.3', wsId:'ws3', name:'Phased Data Migration Waves 1–3',            start:5.5, end:11.5, progress:20 },
+  { id:'T3.3a',wsId:'ws3', name:'Wave 1 – Client Domain',                     start:5.5, end:7.5,  progress:35, parentId:'T3.3' },
+  { id:'T3.3b',wsId:'ws3', name:'Wave 2 – Account Domain',                    start:7.5, end:9.5,  progress:10, parentId:'T3.3' },
+  { id:'T3.3c',wsId:'ws3', name:'Wave 3 – Reference Data',                    start:9.5, end:11.5, progress:0,  parentId:'T3.3' },
+  { id:'M3',   wsId:'ws3', name:'Wave 1 Cut',                                  milestone:true, at:7.5, hit:false, parentId:'T3.3' },
+
+  // 4. Re-platforming
+  { id:'T4.1', wsId:'ws4', name:'Natural/COBOL Reverse Engineering (MFREA)',  start:1.0, end:4.5,  progress:65 },
+  { id:'T4.2', wsId:'ws4', name:'Microservices Decomposition & Build',        start:3.5, end:10.0, progress:35 },
+  { id:'T4.2a',wsId:'ws4', name:'API Contract Definition',                    start:3.5, end:5.0,  progress:75, parentId:'T4.2' },
+  { id:'T4.2b',wsId:'ws4', name:'Service Build – Sprints',                    start:4.5, end:9.0,  progress:40, parentId:'T4.2' },
+  { id:'T4.2b.i', wsId:'ws4', name:'Sprint 1 – Client Service',               start:4.5, end:5.5,  progress:100, parentId:'T4.2b' },
+  { id:'T4.2b.ii',wsId:'ws4', name:'Sprint 2 – Account Service',              start:5.5, end:7.0,  progress:60,  parentId:'T4.2b' },
+  { id:'T4.2b.iii',wsId:'ws4', name:'Sprint 3 – Reference Service',           start:7.0, end:9.0,  progress:10,  parentId:'T4.2b' },
+  { id:'T4.2c',wsId:'ws4', name:'Containerization & Deploy',                  start:7.0, end:10.0, progress:15, parentId:'T4.2' },
+  { id:'T4.3', wsId:'ws4', name:'Parallel Run & Reconciliation',              start:8.5, end:11.5, progress:5  },
+  { id:'M4',   wsId:'ws4', name:'Parallel Run Start',                          milestone:true, at:8.5, hit:false, parentId:'T4.3' },
+
+  // 5. Integration
+  { id:'T5.1', wsId:'ws5', name:'API Gateway & Event Backbone',               start:2.0, end:5.5,  progress:50 },
+  { id:'T5.2', wsId:'ws5', name:'Downstream Consumer Onboarding',             start:5.0, end:10.0, progress:20, atRisk:true },
+  { id:'M5',   wsId:'ws5', name:'Fabric GA',                                   milestone:true, at:5.5, hit:false, parentId:'T5.1' },
+
+  // 6. Testing
+  { id:'T6.1', wsId:'ws6', name:'Test Strategy & Automation Harness',         start:3.0, end:5.0,  progress:80 },
+  { id:'T6.2', wsId:'ws6', name:'Regression & Performance Testing',           start:5.0, end:10.0, progress:25 },
+  { id:'T6.3', wsId:'ws6', name:'UAT & Business Sign-off',                    start:9.0, end:11.5, progress:0  },
+
+  // 7. Cutover — late 2026
+  { id:'T7.1', wsId:'ws7', name:'Cutover Planning & Dress Rehearsals',        start:8.0, end:10.5, progress:0, delayed:true },
+  { id:'T7.2', wsId:'ws7', name:'Production Cutover Waves 1–3',               start:10.5,end:12.0, progress:0 },
+  { id:'M6',   wsId:'ws7', name:'Cut-over GO',                                 milestone:true, at:11.0, hit:false, parentId:'T7.2' },
+
+  // 8. Change Mgmt — full-year
+  { id:'T8.1', wsId:'ws8', name:'Stakeholder Engagement & Comms',             start:0.0, end:12.0, progress:55 },
+  { id:'T8.2', wsId:'ws8', name:'Training Curriculum Rollout',                start:5.0, end:11.5, progress:15 }
+];
+
+let dependencies = [
+  ['T1.1','T1.3'],['T1.2','T1.3'],['T1.3','T2.1'],
+  ['T2.1','T2.2'],['T2.2','T2.3'],
+  ['T2.1','T3.1'],['T3.1','T3.2'],['T3.2','T3.3'],
+  ['T2.2','T4.1'],['T4.1','T4.2'],['T4.2','T4.3'],
+  ['T2.3','T5.1'],['T5.1','T5.2'],
+  ['T4.2','T6.2'],['T6.1','T6.2'],['T6.2','T6.3'],
+  ['T6.3','T7.1'],['T7.1','T7.2'],
+  ['T4.3','T7.1'],['T3.3','T7.2']
+];
+
+// Critical-path pairs (tracked separately so we can import/export)
+let criticalPairs = new Set([
+  'T1.3-T2.1','T2.1-T3.1','T3.1-T3.2','T3.2-T3.3','T3.3-T7.2','T7.1-T7.2'
+]);
+
+let raid = [
+  { id:'R-001', kind:'risk', title:'ADABAS schema drift during discovery', ws:'Data Migration', sev:'high', owner:'SM', ownerName:'S. Menon', status:'progress', date:'2026-05-30',
+    desc:'Undocumented legacy triggers risk mapping accuracy of golden records.' },
+  { id:'R-002', kind:'risk', title:'Key integration vendor resource attrition', ws:'Integration', sev:'med', owner:'MD', ownerName:'M. Duarte', status:'mitigated', date:'2026-04-15',
+    desc:'Contingency staffed via secondary vendor; SoW extension in legal review.' },
+  { id:'R-003', kind:'risk', title:'Regulatory change impact on KYC fields', ws:'Data Migration', sev:'high', owner:'AA', ownerName:'A. Agrawal', status:'open', date:'2026-06-01',
+    desc:'Potential MiFID II/GDPR amendments may force re-scoping of Wave 2.' },
+  { id:'A-001', kind:'assumption', title:'Mainframe MIPS capacity available through Q3-FY27', ws:'Cutover', sev:'med', owner:'DO', ownerName:'D. Okafor', status:'accepted', date:'2027-09-30',
+    desc:'Infra team confirmed headroom; validated quarterly.' },
+  { id:'A-002', kind:'assumption', title:'All downstream consumers sign API contract by Q2-FY26', ws:'Integration', sev:'high', owner:'MD', ownerName:'M. Duarte', status:'progress', date:'2026-06-30',
+    desc:'9 of 14 consumers have signed; remaining in negotiation.' },
+  { id:'I-001', kind:'issue', title:'Performance testing env parity gaps', ws:'Testing', sev:'med', owner:'EP', ownerName:'E. Park', status:'progress', date:'2026-05-01',
+    desc:'Test env lacks production memory profile; procurement raised.' },
+  { id:'I-002', kind:'issue', title:'Cutover rehearsal scheduling conflict', ws:'Cutover', sev:'high', owner:'DO', ownerName:'D. Okafor', status:'open', date:'2026-04-28',
+    desc:'Two business units unavailable for dress rehearsal window.' },
+  { id:'D-001', kind:'dependency', title:'Cloud landing zone GA (Platform Eng.)', ws:'Architecture', sev:'high', owner:'RK', ownerName:'R. Kapoor', status:'progress', date:'2026-05-15',
+    desc:'Platform team targeting mid-Q2 GA; blocking microservices build.' },
+  { id:'D-002', kind:'dependency', title:'KYC Platform go-live (sister program)', ws:'Data Migration', sev:'med', owner:'AA', ownerName:'A. Agrawal', status:'progress', date:'2026-09-30',
+    desc:'Golden record rules aligned with KYC Platform taxonomy.' },
+  { id:'D-003', kind:'dependency', title:'Compliance sign-off on data residency', ws:'Architecture', sev:'med', owner:'RK', ownerName:'R. Kapoor', status:'mitigated', date:'2026-03-15',
+    desc:'Sign-off received; formal memo issued 08 Mar.' },
+  { id:'I-003', kind:'issue', title:'Reconciliation breaks in parallel run pilot', ws:'Re-platforming', sev:'med', owner:'JC', ownerName:'J. Coutts', status:'closed', date:'2026-03-05',
+    desc:'Root-caused to rounding logic; fix deployed; regression green.' },
+  { id:'R-004', kind:'risk', title:'Talent gap in Natural/COBOL expertise', ws:'Re-platforming', sev:'med', owner:'JC', ownerName:'J. Coutts', status:'mitigated', date:'2026-07-01',
+    desc:'Offset via MFREA agent-assisted reverse engineering.' }
+];
+
+let tracker = [
+  { id:'D-001', name:'Executive Program Charter v2.1',       ws:'Foundation',     owner:'AA', ownerName:'A. Agrawal', status:'done',     pct:100, due:'2025-04-30' },
+  { id:'D-002', name:'TCO & Business Case Pack',             ws:'Foundation',     owner:'AA', ownerName:'A. Agrawal', status:'done',     pct:100, due:'2025-06-15' },
+  { id:'D-003', name:'Target Reference Architecture v1.0',   ws:'Architecture',   owner:'RK', ownerName:'R. Kapoor',  status:'done',     pct:100, due:'2025-11-30' },
+  { id:'D-004', name:'Domain Decomposition Playbook',        ws:'Architecture',   owner:'RK', ownerName:'R. Kapoor',  status:'progress', pct:70,  due:'2026-05-30' },
+  { id:'D-005', name:'Security & Compliance Blueprint',      ws:'Architecture',   owner:'RK', ownerName:'R. Kapoor',  status:'progress', pct:55,  due:'2026-07-15' },
+  { id:'D-006', name:'ADABAS Data Catalog (full)',           ws:'Data Migration', owner:'SM', ownerName:'S. Menon',   status:'progress', pct:80,  due:'2026-05-30', risk:true },
+  { id:'D-007', name:'Golden Record Rule Set',               ws:'Data Migration', owner:'SM', ownerName:'S. Menon',   status:'progress', pct:45,  due:'2026-08-30' },
+  { id:'D-008', name:'Wave-1 Migration Runbook',             ws:'Data Migration', owner:'SM', ownerName:'S. Menon',   status:'progress', pct:30,  due:'2026-07-30' },
+  { id:'D-009', name:'MFREA Reverse-Eng Report (Tranche 1)', ws:'Re-platforming', owner:'JC', ownerName:'J. Coutts',  status:'progress', pct:65,  due:'2026-06-30' },
+  { id:'D-010', name:'Microservice Build – Client Domain',   ws:'Re-platforming', owner:'JC', ownerName:'J. Coutts',  status:'progress', pct:35,  due:'2026-11-30' },
+  { id:'D-011', name:'API Gateway Production Rollout',       ws:'Integration',    owner:'MD', ownerName:'M. Duarte',  status:'progress', pct:50,  due:'2026-06-30' },
+  { id:'D-012', name:'Consumer Onboarding Waves 1–2',        ws:'Integration',    owner:'MD', ownerName:'M. Duarte',  status:'progress', pct:20,  due:'2026-09-30', risk:true },
+  { id:'D-013', name:'Test Automation Harness',              ws:'Testing',        owner:'EP', ownerName:'E. Park',    status:'progress', pct:80,  due:'2026-05-15' },
+  { id:'D-014', name:'Regression Test Suite',                ws:'Testing',        owner:'EP', ownerName:'E. Park',    status:'progress', pct:25,  due:'2026-12-15' },
+  { id:'D-015', name:'Cutover Playbook v1',                  ws:'Cutover',        owner:'DO', ownerName:'D. Okafor',  status:'open',     pct:0,   due:'2026-10-30' },
+  { id:'D-016', name:'Dress Rehearsal #1 Report',            ws:'Cutover',        owner:'DO', ownerName:'D. Okafor',  status:'open',     pct:0,   due:'2026-04-10', overdue:true },
+  { id:'D-017', name:'Change Impact Assessment',             ws:'Change Mgmt',    owner:'LC', ownerName:'L. Chen',    status:'progress', pct:55,  due:'2026-07-30' },
+  { id:'D-018', name:'Training Curriculum (Wave 1)',         ws:'Change Mgmt',    owner:'LC', ownerName:'L. Chen',    status:'progress', pct:15,  due:'2026-09-30' }
+];
+
+// KPI datasets
+let kpiSummary = [
+  { metric:'SPI',               label:'Schedule Performance', value:0.97, barPct:97, barColor:'g',  note:'SPI · target ≥ 0.95' },
+  { metric:'CPI',               label:'Cost Performance',     value:1.02, barPct:92, barColor:'g',  note:'CPI · ▲ 0.04 vs Q1' },
+  { metric:'BudgetConsumed',    label:'Budget Consumed',      value:'42%',barPct:42, barColor:'',   note:'$14.7M of $35M' },
+  { metric:'MilestoneHitRate',  label:'Milestone Hit Rate',   value:'88%',barPct:88, barColor:'g',  note:'22 of 25 milestones on time' }
+];
+
+let kpiTimeline = [
+  {month:'Apr-25', planned:3,  actual:3},
+  {month:'Jul-25', planned:8,  actual:8},
+  {month:'Oct-25', planned:16, actual:15},
+  {month:'Jan-26', planned:26, actual:24},
+  {month:'Apr-26', planned:38, actual:35},
+  {month:'Jul-26', planned:52, actual:48},
+  {month:'Oct-26', planned:66, actual:null},
+  {month:'Jan-27', planned:78, actual:null},
+  {month:'Apr-27', planned:88, actual:null},
+  {month:'Jul-27', planned:95, actual:null},
+  {month:'Oct-27', planned:99, actual:null},
+  {month:'Jan-28', planned:100,actual:null}
+];
+
+let kpiEffort = [
+  {workstream:'Foundation',     percent:6},
+  {workstream:'Architecture',   percent:10},
+  {workstream:'Data Migration', percent:22},
+  {workstream:'Re-platforming', percent:24},
+  {workstream:'Integration',    percent:14},
+  {workstream:'Testing',        percent:12},
+  {workstream:'Cutover',        percent:8},
+  {workstream:'Change Mgmt',    percent:4}
+];
+
+let kpiRaidBreakdown = [
+  {type:'Risks',        open:2, mitigated:1, accepted:0, closed:0},
+  {type:'Assumptions',  open:0, mitigated:0, accepted:1, closed:0},
+  {type:'Issues',       open:1, mitigated:0, accepted:0, closed:1},
+  {type:'Dependencies', open:2, mitigated:1, accepted:0, closed:0}
+];
+
+let kpiVelocity = [
+  {month:'Oct', closed:4,  opened:3},
+  {month:'Nov', closed:6,  opened:5},
+  {month:'Dec', closed:5,  opened:4},
+  {month:'Jan', closed:7,  opened:6},
+  {month:'Feb', closed:9,  opened:7},
+  {month:'Mar', closed:8,  opened:6},
+  {month:'Apr', closed:11, opened:8}
+];
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.panel).classList.add('active');
+  });
+});
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+const LABEL_W = 320;
+const COL_W = 92;
+const ROW_H = 44;
+const WS_ROW_H = 40;
+const HEADER_H = 90; // year(32) + quarter(28) + month(30)
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const PROGRAM_YEAR = 2026;
+
+// Convert today's date to a 0–12 month-fraction within PROGRAM_YEAR.
+// Returns -1 if before the year, 13 if after.
+function computeTodayFrac(){
+  const now = new Date();
+  if (now.getFullYear() < PROGRAM_YEAR) return -1;
+  if (now.getFullYear() > PROGRAM_YEAR) return 13;
+  const m = now.getMonth();
+  const d = now.getDate();
+  const dim = new Date(PROGRAM_YEAR, m+1, 0).getDate();
+  return m + (d - 1) / dim;
+}
+
+// Convert an ISO date string (YYYY-MM-DD) to a month-fraction (0–12) within PROGRAM_YEAR.
+// Dates before Jan 1 of the year clamp to 0; dates after Dec 31 clamp to 12.
+function dateToFrac(iso){
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const yDiff = d.getFullYear() - PROGRAM_YEAR;
+  if (yDiff < 0) return 0;
+  if (yDiff > 0) return 12;
+  const m   = d.getMonth();
+  const day = d.getDate();
+  const dim = new Date(PROGRAM_YEAR, m+1, 0).getDate();
+  return m + (day - 1) / dim;
+}
+
+// Convert month-fraction (0–12) back to an ISO date string within PROGRAM_YEAR.
+function fracToDate(frac){
+  if (frac == null || isNaN(+frac)) return '';
+  const f = Math.max(0, Math.min(12, +frac));
+  const m = Math.min(11, Math.floor(f));
+  const dim = new Date(PROGRAM_YEAR, m+1, 0).getDate();
+  const dayIdx = Math.round((f - m) * dim);
+  const day = Math.max(1, Math.min(dim, dayIdx + 1));
+  const d = new Date(PROGRAM_YEAR, m, day);
+  const yr = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${yr}-${mm}-${dd}`;
+}
+
+// Resolve a task's visual start/end/at fraction, preferring date fields if present.
+function taskStart(t){ return t.startDate != null && t.startDate !== '' ? dateToFrac(t.startDate) : (+t.start || 0); }
+function taskEnd(t)  { return t.endDate   != null && t.endDate   !== '' ? dateToFrac(t.endDate)   : (+t.end   || 0); }
+function taskAt(t)   { return t.atDate    != null && t.atDate    !== '' ? dateToFrac(t.atDate)    : (+t.at    || 0); }
+
+/* ============================================================
+   GANTT RENDER
+   ============================================================ */
+const gantt = document.getElementById('gantt');
+
+// Collapse state — tracks which workstreams and parent tasks are minimized.
+// Persists across renders within the session.
+const collapsedWs   = new Set();
+const collapsedTask = new Set();
+
+function renderGantt(){
+  gantt.innerHTML = '';
+  gantt.style.minHeight = 'auto';
+
+  const rowPlan = [];
+  workstreams.forEach(ws => {
+    rowPlan.push({type:'ws', ws});
+
+    // Skip all children if workstream is collapsed
+    if (collapsedWs.has(ws.id)) return;
+
+    const wsItems = tasks.filter(t => t.wsId === ws.id);
+
+    // Top-level tasks = non-milestones with no parent (or parent not found in same ws)
+    const topLevel = wsItems.filter(t => !t.milestone &&
+      (!t.parentId || !wsItems.some(p => p.id === t.parentId)));
+
+    // Orphan milestones = milestones whose parent doesn't exist in the ws
+    // (Attached milestones render INSIDE their parent's bar — no separate row)
+    const orphanMilestones = wsItems.filter(t => t.milestone &&
+      (!t.parentId || !wsItems.some(p => p.id === t.parentId)));
+
+    const childrenOf = (pid) => wsItems.filter(t => t.parentId === pid);
+
+    topLevel.forEach(parent => {
+      rowPlan.push({type:'task', task:parent, ws});
+
+      // If parent is collapsed, skip its subtask children
+      if (collapsedTask.has(parent.id)) return;
+
+      // Children of this top-level parent: only SUBTASKS get their own rows now
+      // (milestones attached to the parent render inline on the parent bar)
+      const kids = childrenOf(parent.id);
+      const kidSubtasks = kids.filter(k => !k.milestone);
+
+      kidSubtasks.forEach(sub => {
+        rowPlan.push({type:'task', task:sub, ws, nested:true, kind:'subtask'});
+
+        // If this subtask is itself collapsed, skip its grandchildren
+        if (collapsedTask.has(sub.id)) return;
+
+        // Grandchildren: only subtasks get their own rows
+        // (milestones attached to this subtask render inline on the subtask bar)
+        const grandKids = childrenOf(sub.id);
+        const grandSubs = grandKids.filter(k => !k.milestone);
+        grandSubs.forEach(gs => {
+          rowPlan.push({type:'task', task:gs, ws, nested:true, kind:'subtask-deep'});
+        });
+      });
+    });
+    orphanMilestones.forEach(ms => rowPlan.push({type:'task', task:ms, ws}));
+  });
+
+  let html = '';
+  html += `<div class="g-label-head"><span>Workstream / Task</span><span class="sub">Owner</span></div>`;
+
+  // Row 1: year spanning all 12 months
+  html += `<div class="g-yearcell" style="grid-column:2 / span 12;">FY${String(PROGRAM_YEAR).slice(2)} · ${PROGRAM_YEAR}</div>`;
+
+  // Row 2: quarters, each spanning 3 months
+  for (let q=0; q<4; q++){
+    html += `<div class="g-qcell" style="grid-column:${q*3+2} / span 3;">Q${q+1}</div>`;
+  }
+
+  // Row 3: months
+  MONTHS_SHORT.forEach((m, i) => {
+    html += `<div class="g-mcell" style="grid-column:${i+2} / span 1;">${m}</div>`;
+  });
+
+  let rowIndex = 4; // body starts after 3 header rows
+  rowPlan.forEach(entry => {
+    if (entry.type === 'ws'){
+      const ws = entry.ws;
+      const pillClass = ws.health === 'green' ? 'green' : ws.health === 'amber' ? 'amber' : 'red';
+      const isCollapsed = collapsedWs.has(ws.id);
+      const chevron = `<span class="collapse-toggle" data-toggle-ws="${esc(ws.id)}" title="${isCollapsed ? 'Expand' : 'Collapse'} workstream">${isCollapsed ? '▸' : '▾'}</span>`;
+      html += `<div class="g-lbl ws" style="grid-row:${rowIndex}" data-ws-id="${esc(ws.id)}" title="Click to edit workstream">
+        ${chevron}<span>${ws.name}</span>
+        <span class="tmeta">
+          <span class="owner">${ws.owner}</span>
+          <span class="pill ${pillClass}">${ws.health}</span>
+        </span>
+      </div>`;
+      for (let c=0; c<12; c++){
+        const qGroup = Math.floor(c/3);
+        const qEven = (qGroup % 2 === 0) ? ' q-even' : '';
+        const qEnd = ((c+1) % 3 === 0) ? ' q-end' : '';
+        html += `<div class="g-cell ws${qEven}${qEnd}" style="grid-row:${rowIndex};grid-column:${c+2}"></div>`;
+      }
+    } else {
+      const t = entry.task;
+      const isMs = !!t.milestone;
+      let indentPx = 0, prefix = '';
+      if (isMs){
+        prefix = '◆ ';
+        if (entry.kind === 'milestone')     { indentPx = 28; prefix = '└ ◆ '; }
+        if (entry.kind === 'milestone-deep'){ indentPx = 56; prefix = '└ ◆ '; }
+      } else if (entry.kind === 'subtask'){
+        indentPx = 28; prefix = '└ ';
+      } else if (entry.kind === 'subtask-deep'){
+        indentPx = 56; prefix = '└ ';
+      }
+
+      // Chevron toggle if this task has subtask children (rendered as rows)
+      const hasSubtaskChildren = !isMs &&
+        tasks.some(x => x.parentId === t.id && !x.milestone);
+      let chevronHtml = '';
+      if (hasSubtaskChildren){
+        const isCollapsed = collapsedTask.has(t.id);
+        chevronHtml = `<span class="collapse-toggle task-toggle" data-toggle-task="${esc(t.id)}" title="${isCollapsed ? 'Expand' : 'Collapse'} subtasks">${isCollapsed ? '▸' : '▾'}</span>`;
+      }
+
+      const indentStyle = indentPx ? ` style="padding-left:${indentPx}px"` : '';
+      html += `<div class="g-lbl${entry.kind ? ' sub-' + entry.kind : ''}" style="grid-row:${rowIndex}" data-task-id="${esc(t.id)}" title="Click to edit">
+        <span class="tname"${indentStyle}>${chevronHtml}${prefix}${esc(t.name)}</span>
+        <span class="tmeta"><span class="owner">${esc(t.id)}</span></span>
+      </div>`;
+      for (let c=0; c<12; c++){
+        const qGroup = Math.floor(c/3);
+        const qEven = (qGroup % 2 === 0) ? ' q-even' : '';
+        const qEnd = ((c+1) % 3 === 0) ? ' q-end' : '';
+        html += `<div class="g-cell${qEven}${qEnd}" style="grid-row:${rowIndex};grid-column:${c+2}"></div>`;
+      }
+    }
+    rowIndex++;
+  });
+  gantt.innerHTML = html;
+
+  // Overlay for bars, milestones, arrows
+  const overlay = document.createElement('div');
+  overlay.style.position = 'absolute';
+  overlay.style.inset = '0';
+  overlay.style.pointerEvents = 'none';
+  gantt.appendChild(overlay);
+
+  const gridLeft = LABEL_W;
+  const rowTops = [];
+  let acc = 0;
+  rowPlan.forEach(entry => {
+    rowTops.push(acc);
+    acc += entry.type === 'ws' ? WS_ROW_H : ROW_H;
+  });
+  const bodyHeight = acc;
+
+  const todayFrac = computeTodayFrac();
+  if (todayFrac >= 0 && todayFrac <= 12){
+    const todayLine = document.createElement('div');
+    todayLine.className = 'today-line';
+    todayLine.style.left = (gridLeft + todayFrac * COL_W) + 'px';
+    todayLine.style.top = HEADER_H + 'px';
+    todayLine.style.height = bodyHeight + 'px';
+    overlay.appendChild(todayLine);
+  }
+
+  const barPositions = {};
+
+  rowPlan.forEach((entry, idx) => {
+    if (entry.type !== 'task') return;
+    const t = entry.task;
+    const ws = entry.ws;
+    const rowTop = HEADER_H + rowTops[idx];
+
+    if (t.milestone){
+      const atFrac = taskAt(t);
+      const left = gridLeft + atFrac * COL_W;
+      const el = document.createElement('div');
+      const msLate = !t.hit && todayFrac >= 0 && atFrac < todayFrac;
+      el.className = 'milestone' + (t.hit ? ' hit' : (msLate ? ' late' : ''));
+      el.style.left = left + 'px';
+      el.style.top = (rowTop + ROW_H/2) + 'px';
+      el.title = `${t.name} (${t.id})${msLate ? ' — OVERDUE' : ''} · Click to edit`;
+      el.dataset.taskId = t.id;
+      overlay.appendChild(el);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'milestone-label';
+      lbl.textContent = t.name;
+      lbl.style.left = left + 'px';
+      lbl.style.top = (rowTop + ROW_H/2 - 6) + 'px';
+      overlay.appendChild(lbl);
+
+      barPositions[t.id] = { left, right:left, y: rowTop + ROW_H/2 };
+    } else {
+      // Non-milestone task branch (t from outer scope is the task).
+
+      // If this task has subtask children, derive its start/end/progress
+      // from the subtasks (summary-bar behavior).
+      let sFrac, eFrac, p;
+      let isSummary = false;
+      const subtasks = tasks.filter(x => !x.milestone && x.parentId === t.id);
+      if (subtasks.length){
+        isSummary = true;
+        const starts = subtasks.map(taskStart);
+        const ends   = subtasks.map(taskEnd);
+        sFrac = Math.min(...starts);
+        eFrac = Math.max(...ends);
+        // Duration-weighted progress of children
+        let totalDur = 0, weighted = 0;
+        subtasks.forEach(st => {
+          const dur = Math.max(0.01, taskEnd(st) - taskStart(st));
+          totalDur += dur;
+          weighted += dur * (+st.progress || 0);
+        });
+        p = totalDur > 0 ? Math.round(weighted / totalDur) : 0;
+      } else {
+        sFrac = taskStart(t);
+        eFrac = taskEnd(t);
+        p = +t.progress || 0;
+      }
+
+      const left = gridLeft + sFrac * COL_W;
+      const width = Math.max(10, (eFrac - sFrac) * COL_W);
+      const bar = document.createElement('div');
+
+      // Overdue detection:
+      //   Late start  = task was supposed to start before today but progress is still 0
+      //   Late finish = task was supposed to be complete before today but progress is < 100
+      const inYear   = todayFrac >= 0 && todayFrac <= 12;
+      const pastYear = todayFrac > 12;
+      const isLate = inYear
+        ? ((p === 0 && sFrac < todayFrac) || (p < 100 && eFrac < todayFrac))
+        : (pastYear && p < 100);
+
+      const statusClass = isLate
+        ? 's-late'
+        : (p >= 100 ? 's-done' : (p > 0 ? 's-progress' : 's-notstarted'));
+
+      bar.className = 'task ' + statusClass
+        + (t.atRisk ? ' at-risk' : '')
+        + (t.delayed ? ' delayed' : '')
+        + ((entry.kind === 'subtask' || entry.kind === 'subtask-deep') ? ' subtask-bar' : '')
+        + (isSummary ? ' summary-bar' : '');
+      bar.style.left = left + 'px';
+      // Compute vertical offset and height inline based on row kind and summary state
+      const isSubtaskRow = (entry.kind === 'subtask' || entry.kind === 'subtask-deep');
+      let barTopOffset, barHeight;
+      if (isSummary && isSubtaskRow){
+        barTopOffset = 15; barHeight = ROW_H - 30;
+      } else if (isSummary){
+        barTopOffset = 14; barHeight = ROW_H - 28;
+      } else if (isSubtaskRow){
+        barTopOffset = 11; barHeight = ROW_H - 22;
+      } else {
+        barTopOffset = 8;  barHeight = ROW_H - 16;
+      }
+      bar.style.top = (rowTop + barTopOffset) + 'px';
+      bar.style.height = barHeight + 'px';
+      bar.style.width = width + 'px';
+      bar.title = `${t.id} · ${t.name} · ${p}% complete${isSummary ? ' (rolled up from subtasks)' : ''}${isLate ? ' · OVERDUE' : ''} · Click to edit`;
+      bar.dataset.taskId = t.id;
+
+      const prog = document.createElement('div');
+      prog.className = 'progress';
+      prog.style.width = p + '%';
+      bar.appendChild(prog);
+
+      overlay.appendChild(bar);
+      barPositions[t.id] = { left, right: left + width, y: rowTop + ROW_H/2, width };
+    }
+  });
+
+  // Second pass — overlay attached milestones directly on their parent's row.
+  // A milestone is "attached" when its parentId matches another task that has its own row.
+  tasks.forEach(ms => {
+    if (!ms.milestone || !ms.parentId) return;
+    const parentPos = barPositions[ms.parentId];
+    if (!parentPos) return; // parent has no row (e.g., parent not in a rendered workstream)
+
+    const atFrac = taskAt(ms);
+    const left = gridLeft + atFrac * COL_W;
+    const msLate = !ms.hit && todayFrac >= 0 && atFrac < todayFrac;
+
+    const el = document.createElement('div');
+    el.className = 'milestone milestone-inline' + (ms.hit ? ' hit' : (msLate ? ' late' : ''));
+    el.style.left = left + 'px';
+    el.style.top  = parentPos.y + 'px';
+    el.title = `${ms.name} (${ms.id})${msLate ? ' — OVERDUE' : ''} · Click to edit`;
+    el.dataset.taskId = ms.id;
+    overlay.appendChild(el);
+
+    // Tiny label below the diamond
+    const lbl = document.createElement('div');
+    lbl.className = 'milestone-label milestone-label-inline';
+    lbl.textContent = ms.name;
+    lbl.style.left = left + 'px';
+    lbl.style.top  = (parentPos.y + 12) + 'px';
+    overlay.appendChild(lbl);
+
+    // Record position so dependencies and deletions still work
+    barPositions[ms.id] = { left, right:left, y: parentPos.y };
+  });
+
+  // Third pass — render a rolled-up progress bar on each workstream header row.
+  // Derived from all non-milestone tasks within the workstream.
+  rowPlan.forEach((entry, idx) => {
+    if (entry.type !== 'ws') return;
+    const ws = entry.ws;
+    const rowTop = HEADER_H + rowTops[idx];
+
+    // Only top-level tasks (non-milestones with no valid parent in ws) contribute,
+    // to avoid double-counting subtasks that already roll up into their parents.
+    const wsItems = tasks.filter(t => t.wsId === ws.id && !t.milestone);
+    const topTasks = wsItems.filter(t => !t.parentId || !wsItems.some(p => p.id === t.parentId));
+    if (topTasks.length === 0) return;
+
+    // Helper to compute effective start/end/progress for a task (rolled up if it has subtasks)
+    const effectiveOf = (t) => {
+      const kids = tasks.filter(x => !x.milestone && x.parentId === t.id);
+      if (kids.length === 0){
+        return { s:taskStart(t), e:taskEnd(t), p:(+t.progress || 0) };
+      }
+      // Recurse one level (and the inner call handles grandchildren)
+      let sMin = Infinity, eMax = -Infinity, totalDur = 0, weighted = 0;
+      kids.forEach(k => {
+        const r = effectiveOf(k);
+        if (r.s < sMin) sMin = r.s;
+        if (r.e > eMax) eMax = r.e;
+        const dur = Math.max(0.01, r.e - r.s);
+        totalDur += dur;
+        weighted += dur * r.p;
+      });
+      return {
+        s: sMin, e: eMax,
+        p: totalDur > 0 ? weighted / totalDur : 0
+      };
+    };
+
+    let wsStart = Infinity, wsEnd = -Infinity, totalDur = 0, weighted = 0;
+    topTasks.forEach(t => {
+      const r = effectiveOf(t);
+      if (r.s < wsStart) wsStart = r.s;
+      if (r.e > wsEnd)   wsEnd   = r.e;
+      const dur = Math.max(0.01, r.e - r.s);
+      totalDur += dur;
+      weighted += dur * r.p;
+    });
+    if (!isFinite(wsStart) || !isFinite(wsEnd) || wsEnd <= wsStart) return;
+    const wsProgress = totalDur > 0 ? Math.round(weighted / totalDur) : 0;
+
+    // Determine status color
+    const inYear   = todayFrac >= 0 && todayFrac <= 12;
+    const isLate = inYear && wsProgress < 100 && wsEnd < todayFrac;
+    const statusClass = isLate
+      ? 's-late'
+      : (wsProgress >= 100 ? 's-done' : (wsProgress > 0 ? 's-progress' : 's-notstarted'));
+
+    const left = gridLeft + wsStart * COL_W;
+    const width = Math.max(10, (wsEnd - wsStart) * COL_W);
+
+    const bar = document.createElement('div');
+    bar.className = 'task ws-bar ' + statusClass;
+    bar.style.left = left + 'px';
+    bar.style.top  = (rowTop + 11) + 'px';
+    bar.style.height = (WS_ROW_H - 22) + 'px';
+    bar.style.width = width + 'px';
+    bar.title = `${ws.name} · ${wsProgress}% complete (rolled up from ${topTasks.length} task${topTasks.length===1?'':'s'})${isLate ? ' · OVERDUE' : ''}`;
+
+    const prog = document.createElement('div');
+    prog.className = 'progress';
+    prog.style.width = wsProgress + '%';
+    bar.appendChild(prog);
+
+    // Small inline % label on the right side of the workstream row
+    const pct = document.createElement('div');
+    pct.className = 'ws-bar-pct';
+    pct.textContent = wsProgress + '%';
+    pct.style.top  = (rowTop + (WS_ROW_H - 18) / 2) + 'px';
+    pct.style.left = (left + width + 8) + 'px';
+    overlay.appendChild(pct);
+
+    overlay.appendChild(bar);
+  });
+
+  // Dependency SVG
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('class','dep-svg');
+  svg.style.left = '0';
+  svg.style.top = HEADER_H + 'px';
+  svg.style.width = (gridLeft + 12 * COL_W) + 'px';
+  svg.style.height = bodyHeight + 'px';
+  svg.setAttribute('viewBox', `0 0 ${gridLeft + 12*COL_W} ${bodyHeight}`);
+
+  const defs = document.createElementNS(svgNS,'defs');
+  defs.innerHTML = `
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1E40AF"/>
+    </marker>
+    <marker id="arr-crit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#EF4444"/>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  dependencies.forEach(([from, to]) => {
+    const A = barPositions[from];
+    const B = barPositions[to];
+    if (!A || !B) return;
+    const startX = A.right + 2;
+    const startY = A.y - HEADER_H;
+    const endX = B.left - 2;
+    const endY = B.y - HEADER_H;
+
+    let d;
+    const stub = 14;
+    const r = 6;
+    const sameRow = Math.abs(endY - startY) < 2;
+
+    if (sameRow){
+      d = `M ${startX} ${startY} L ${endX} ${endY}`;
+    } else if (endX > startX + stub*2){
+      const midX = startX + stub;
+      const dir = endY > startY ? 1 : -1;
+      d =
+        `M ${startX} ${startY} ` +
+        `L ${midX - r} ${startY} ` +
+        `Q ${midX} ${startY} ${midX} ${startY + dir*r} ` +
+        `L ${midX} ${endY - dir*r} ` +
+        `Q ${midX} ${endY} ${midX + r} ${endY} ` +
+        `L ${endX} ${endY}`;
+    } else {
+      const rightX = startX + stub;
+      const leftX = endX - stub;
+      const midY = (startY + endY) / 2;
+      const dir1 = midY > startY ? 1 : -1;
+      const dir2 = endY > midY ? 1 : -1;
+      d =
+        `M ${startX} ${startY} ` +
+        `L ${rightX - r} ${startY} ` +
+        `Q ${rightX} ${startY} ${rightX} ${startY + dir1*r} ` +
+        `L ${rightX} ${midY - dir1*r} ` +
+        `Q ${rightX} ${midY} ${rightX - r} ${midY} ` +
+        `L ${leftX + r} ${midY} ` +
+        `Q ${leftX} ${midY} ${leftX} ${midY + dir2*r} ` +
+        `L ${leftX} ${endY - dir2*r} ` +
+        `Q ${leftX} ${endY} ${leftX + r} ${endY} ` +
+        `L ${endX} ${endY}`;
+    }
+
+    const isCrit = criticalPairs.has(`${from}-${to}`);
+    const path = document.createElementNS(svgNS,'path');
+    path.setAttribute('class', 'dep-path finish-start' + (isCrit ? ' critical' : ''));
+    path.setAttribute('d', d);
+    path.setAttribute('marker-end', isCrit ? 'url(#arr-crit)' : 'url(#arr)');
+    svg.appendChild(path);
+  });
+
+  overlay.appendChild(svg);
+  gantt.style.minHeight = (HEADER_H + bodyHeight + 20) + 'px';
+}
+
+function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) }
+
+/* ============================================================
+   RAID RENDER
+   ============================================================ */
+function renderRaid(){
+  const tbody = document.querySelector('#raidTable tbody');
+  const now = new Date();
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isOverdue = (r) => {
+    if (!['open','progress'].includes(r.status)) return false;
+    if (!r.date) return false;
+    const d = new Date(r.date);
+    return !isNaN(d.getTime()) && d < today0;
+  };
+
+  tbody.innerHTML = raid.map(r => {
+    const ov = isOverdue(r);
+    return `
+    <tr data-kind="${esc(r.kind)}" data-id="${esc(r.id)}">
+      <td class="id-cell">${esc(r.id)}</td>
+      <td><span class="kind-pill ${esc(r.kind)}">${esc(r.kind)}</span></td>
+      <td class="title-cell">${esc(r.title)}<div class="desc">${esc(r.desc||'')}</div></td>
+      <td>${esc(r.ws)}</td>
+      <td><span class="sev ${esc(r.sev)}">${esc(r.sev)}</span></td>
+      <td><span class="owner-cell"><span class="avatar">${esc(r.owner)}</span>${esc(r.ownerName)}</span></td>
+      <td><span class="status-pill ${esc(r.status)}">${esc(r.status)}</span></td>
+      <td${ov ? ' style="color:var(--red); font-weight:700"' : ''}>${esc(r.date)}${ov ? ' <span class="sev high" style="margin-left:6px">overdue</span>' : ''}</td>
+      <td class="actions-cell"><button class="row-btn" title="Edit" aria-label="Edit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button></td>
+    </tr>`;
+  }).join('');
+
+  const counts = {all:raid.length, risk:0, assumption:0, issue:0, dependency:0};
+  raid.forEach(r => { if (counts[r.kind] !== undefined) counts[r.kind]++; });
+  ['all','risk','assumption','issue','dependency'].forEach(k => {
+    const el = document.getElementById('cnt-' + k);
+    if (el) el.textContent = counts[k];
+  });
+
+  // Re-apply active filter
+  const active = document.querySelector('#raidFilter .raid-tab.active');
+  const kind = active ? active.dataset.kind : 'all';
+  document.querySelectorAll('#raidTable tbody tr').forEach(tr => {
+    tr.style.display = (kind === 'all' || tr.dataset.kind === kind) ? '' : 'none';
+  });
+}
+
+document.querySelectorAll('#raidFilter .raid-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#raidFilter .raid-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const k = btn.dataset.kind;
+    document.querySelectorAll('#raidTable tbody tr').forEach(tr => {
+      tr.style.display = (k === 'all' || tr.dataset.kind === k) ? '' : 'none';
+    });
+  });
+});
+
+/* ============================================================
+   TRACKER RENDER
+   ============================================================ */
+function renderTracker(){
+  const tbody = document.querySelector('#trackerTable tbody');
+  const now = new Date();
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isOverdue = (t) => {
+    if (+t.pct >= 100) return false;
+    if (!t.due) return false;
+    const d = new Date(t.due);
+    return !isNaN(d.getTime()) && d < today0;
+  };
+
+  tbody.innerHTML = tracker.map(t => {
+    const overdue = isOverdue(t);
+    const barCls = overdue ? 'r' : (+t.pct === 100 ? 'g' : '');
+    const statusLabel = t.status === 'done' ? 'complete' : t.status;
+    return `<tr data-id="${esc(t.id)}">
+      <td class="id-cell">${esc(t.id)}</td>
+      <td class="title-cell">${esc(t.name)}${t.risk?' <span class="sev med" style="margin-left:6px">at risk</span>':''}${overdue?' <span class="sev high" style="margin-left:6px">overdue</span>':''}</td>
+      <td>${esc(t.ws)}</td>
+      <td><span class="owner-cell"><span class="avatar">${esc(t.owner)}</span>${esc(t.ownerName)}</span></td>
+      <td><span class="status-pill ${esc(t.status)}">${esc(statusLabel)}</span></td>
+      <td>
+        <div class="tracker-progress">
+          <div class="progress-bar ${barCls} bar"><span style="width:${+t.pct||0}%"></span></div>
+          <div class="pct">${+t.pct||0}%</div>
+        </div>
+      </td>
+      <td${overdue ? ' style="color:var(--red); font-weight:600"' : ''}>${esc(t.due)}</td>
+      <td class="actions-cell"><button class="row-btn" title="Edit" aria-label="Edit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('stat-total').textContent = tracker.length;
+  document.getElementById('stat-done').textContent  = tracker.filter(t => +t.pct === 100).length;
+  document.getElementById('stat-prog').textContent  = tracker.filter(t => t.status === 'progress').length;
+  document.getElementById('stat-over').textContent  = tracker.filter(isOverdue).length;
+}
+
+/* ============================================================
+   KPI SUMMARY CARDS
+   ============================================================ */
+function renderKpiSummary(){
+  const grid = document.getElementById('kpiSummaryGrid');
+  grid.innerHTML = kpiSummary.map(k => `
+    <div class="stat-card">
+      <div class="k">${esc(k.label)}</div>
+      <div class="v">${esc(k.value)}</div>
+      <div class="progress-bar ${k.barColor || ''}"><span style="width:${+k.barPct||0}%"></span></div>
+      <div class="d" style="margin-top:8px">${esc(k.note||'')}</div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   KPI CHARTS
+   ============================================================ */
+const charts = {};
+function renderKpiCharts(){
+  // Destroy existing
+  Object.keys(charts).forEach(k => {
+    if (charts[k] && typeof charts[k].destroy === 'function') {
+      charts[k].destroy();
+      delete charts[k];
+    }
+  });
+
+  const accent = '#F59E0B';
+  const navy   = '#1E40AF';
+  const navy2  = '#2563EB';
+  const green  = '#10B981';
+  const red    = '#EF4444';
+  const purple = '#8B5CF6';
+  const brown  = '#D97706';
+  const slate  = '#64748B';
+
+  Chart.defaults.font.family = '"Manrope", system-ui, sans-serif';
+  Chart.defaults.color = '#334155';
+  Chart.defaults.borderColor = '#E2E8F0';
+
+  charts.line = new Chart(document.getElementById('chartLine'), {
+    type:'line',
+    data:{
+      labels: kpiTimeline.map(r => r.month),
+      datasets:[
+        { label:'Planned (%)', data:kpiTimeline.map(r => r.planned), borderColor:navy, backgroundColor:'rgba(10,31,68,.08)',
+          borderWidth:2, tension:.35, fill:true, pointRadius:3, pointBackgroundColor:navy },
+        { label:'Actual (%)',  data:kpiTimeline.map(r => r.actual),  borderColor:accent, backgroundColor:'rgba(201,169,97,.18)',
+          borderWidth:2.5, tension:.35, fill:true, pointRadius:4, pointBackgroundColor:accent, pointBorderColor:'#fff', pointBorderWidth:2 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:12, boxHeight:4, padding:14}}},
+      scales:{ y:{ min:0, max:100, ticks:{callback:v=>v+'%'}, grid:{color:'#EFEADD'}}, x:{ grid:{display:false}} },
+      interaction:{mode:'index', intersect:false}
+    }
+  });
+
+  const effortColors = [navy, navy2, green, brown, '#35618F', purple, accent, slate];
+  charts.pie = new Chart(document.getElementById('chartPie'), {
+    type:'doughnut',
+    data:{
+      labels: kpiEffort.map(r => r.workstream),
+      datasets:[{
+        data: kpiEffort.map(r => r.percent),
+        backgroundColor: kpiEffort.map((_,i) => effortColors[i % effortColors.length]),
+        borderColor:'#fff', borderWidth:2, hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'58%',
+      plugins:{ legend:{position:'right', labels:{boxWidth:10, boxHeight:10, padding:10, font:{size:11}}}}
+    }
+  });
+
+  charts.raid = new Chart(document.getElementById('chartRaid'), {
+    type:'bar',
+    data:{
+      labels: kpiRaidBreakdown.map(r => r.type),
+      datasets:[
+        { label:'Open',      data:kpiRaidBreakdown.map(r=>r.open),      backgroundColor:red },
+        { label:'Mitigated', data:kpiRaidBreakdown.map(r=>r.mitigated), backgroundColor:green },
+        { label:'Accepted',  data:kpiRaidBreakdown.map(r=>r.accepted),  backgroundColor:navy2 },
+        { label:'Closed',    data:kpiRaidBreakdown.map(r=>r.closed),    backgroundColor:slate }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:12, boxHeight:8, padding:12}}},
+      scales:{ x:{ stacked:true, grid:{display:false}}, y:{ stacked:true, grid:{color:'#EFEADD'}, ticks:{stepSize:1}} }
+    }
+  });
+
+  charts.bar = new Chart(document.getElementById('chartBar'), {
+    type:'bar',
+    data:{
+      labels: kpiVelocity.map(r => r.month),
+      datasets:[
+        { label:'Closed', data:kpiVelocity.map(r=>r.closed), backgroundColor:accent, borderRadius:4, barThickness:22 },
+        { label:'Opened', data:kpiVelocity.map(r=>r.opened), backgroundColor:navy,   borderRadius:4, barThickness:22 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:12, boxHeight:8, padding:12}}},
+      scales:{ x:{ grid:{display:false}}, y:{ grid:{color:'#EFEADD'}, ticks:{stepSize:2}} }
+    }
+  });
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function toast(msg, type='success', duration=3400){
+  const stack = document.getElementById('toastStack');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = `<span>${msg}</span>`;
+  stack.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('fadeout');
+    setTimeout(() => t.remove(), 300);
+  }, duration);
+}
+
+/* ============================================================
+   EXCEL EXPORT
+   ============================================================ */
+function exportToExcel(){
+  if (typeof XLSX === 'undefined'){
+    toast('Excel library not loaded — check your internet connection', 'error');
+    return;
+  }
+  try {
+    const wb = XLSX.utils.book_new();
+
+    // Workstreams
+    const wsSheet = XLSX.utils.json_to_sheet(workstreams, {
+      header:['id','name','theme','owner','health']
+    });
+    XLSX.utils.book_append_sheet(wb, wsSheet, 'Workstreams');
+
+    // Tasks — always emit REAL resolved dates so the Excel file is always human-readable.
+    // Internal data can be stored as dates or as month fractions; the output is always dates.
+    const tasksOut = tasks.map(t => {
+      if (t.milestone){
+        const atF = taskAt(t);
+        return {
+          id:t.id, wsId:t.wsId, name:t.name,
+          milestone: true,
+          startDate: '',
+          endDate:   '',
+          milestoneDate: fracToDate(atF),
+          parentId: t.parentId ?? '',
+          progress: '',
+          hit: t.hit ? 'TRUE' : 'FALSE',
+          atRisk: '',
+          delayed: ''
+        };
+      } else {
+        const sF = taskStart(t);
+        const eF = taskEnd(t);
+        return {
+          id:t.id, wsId:t.wsId, name:t.name,
+          milestone: false,
+          startDate: fracToDate(sF),
+          endDate:   fracToDate(eF),
+          milestoneDate: '',
+          parentId: t.parentId ?? '',
+          progress: +t.progress || 0,
+          hit: '',
+          atRisk:  t.atRisk  ? 'TRUE' : 'FALSE',
+          delayed: t.delayed ? 'TRUE' : 'FALSE'
+        };
+      }
+    });
+    const tSheet = XLSX.utils.json_to_sheet(tasksOut, {
+      header:['id','wsId','name','milestone','startDate','endDate','milestoneDate','parentId','progress','hit','atRisk','delayed']
+    });
+    // Set column widths so dates are legible when opened
+    tSheet['!cols'] = [
+      { wch:10 }, { wch:8 }, { wch:44 }, { wch:10 },
+      { wch:12 }, { wch:12 }, { wch:14 },
+      { wch:10 }, { wch:9 }, { wch:8 }, { wch:8 }, { wch:9 }
+    ];
+    XLSX.utils.book_append_sheet(wb, tSheet, 'Tasks');
+
+    // Dependencies
+    const depsOut = dependencies.map(([f,t]) => ({
+      from: f, to: t, critical: criticalPairs.has(`${f}-${t}`)
+    }));
+    const dSheet = XLSX.utils.json_to_sheet(depsOut, { header:['from','to','critical'] });
+    XLSX.utils.book_append_sheet(wb, dSheet, 'Dependencies');
+
+    // RAID
+    const rSheet = XLSX.utils.json_to_sheet(raid, {
+      header:['id','kind','title','ws','sev','owner','ownerName','status','date','desc']
+    });
+    XLSX.utils.book_append_sheet(wb, rSheet, 'RAID');
+
+    // Tracker
+    const trOut = tracker.map(t => ({
+      id:t.id, name:t.name, ws:t.ws, owner:t.owner, ownerName:t.ownerName,
+      status:t.status, pct:t.pct, due:t.due,
+      risk: t.risk ? true : '', overdue: t.overdue ? true : ''
+    }));
+    const trSheet = XLSX.utils.json_to_sheet(trOut, {
+      header:['id','name','ws','owner','ownerName','status','pct','due','risk','overdue']
+    });
+    XLSX.utils.book_append_sheet(wb, trSheet, 'Tracker');
+
+    // KPI sheets
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpiSummary,
+      { header:['metric','label','value','barPct','barColor','note'] }), 'KPI_Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpiTimeline,
+      { header:['month','planned','actual'] }), 'KPI_Timeline');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpiEffort,
+      { header:['workstream','percent'] }), 'KPI_Effort');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpiRaidBreakdown,
+      { header:['type','open','mitigated','accepted','closed'] }), 'KPI_RAID_Breakdown');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpiVelocity,
+      { header:['month','closed','opened'] }), 'KPI_Velocity');
+
+    // README sheet explaining columns
+    const readme = [
+      { Sheet:'Workstreams', Column:'id',       Notes:'Unique workstream id (e.g. ws1)' },
+      { Sheet:'Workstreams', Column:'name',     Notes:'Display name shown on the Gantt swimlane' },
+      { Sheet:'Workstreams', Column:'theme',    Notes:'Legacy field (retained for compatibility). Task bars now color by status: Completed (green) / In Progress (blue) / Not Started (gray).' },
+      { Sheet:'Workstreams', Column:'owner',    Notes:'Workstream owner name' },
+      { Sheet:'Workstreams', Column:'health',   Notes:'green | amber | red' },
+
+      { Sheet:'Tasks', Column:'wsId',      Notes:'Must match a Workstreams.id' },
+      { Sheet:'Tasks', Column:'milestone', Notes:'TRUE for milestone rows; use milestoneDate instead of startDate/endDate' },
+      { Sheet:'Tasks', Column:'startDate', Notes:'Real date in YYYY-MM-DD. The task\'s start date on the Gantt. Required for non-milestone rows.' },
+      { Sheet:'Tasks', Column:'endDate',   Notes:'Real date in YYYY-MM-DD. The task\'s end date on the Gantt. Required for non-milestone rows.' },
+      { Sheet:'Tasks', Column:'milestoneDate', Notes:'Real date in YYYY-MM-DD. Position of the milestone diamond. Required for milestone rows.' },
+      { Sheet:'Tasks', Column:'parentId',  Notes:'Optional. Task ID to nest under. Use on subtasks (nest under a parent task) and on milestones (attach to a delivery). Blank = top-level / standalone.' },
+      { Sheet:'Tasks', Column:'progress',  Notes:'0–100 (percent). Bars turn red automatically when today is past start with 0% progress (late start) or past end with <100% progress (late finish).' },
+      { Sheet:'Tasks', Column:'hit',       Notes:'TRUE/FALSE. Milestones only — TRUE means hit (green diamond). Unhit milestones past their date pulse red.' },
+      { Sheet:'Tasks', Column:'atRisk',    Notes:'TRUE/FALSE. Non-milestones only — TRUE outlines the bar in red.' },
+      { Sheet:'Tasks', Column:'delayed',   Notes:'TRUE/FALSE. Non-milestones only — TRUE gives the bar an amber dashed outline.' },
+
+      { Sheet:'Dependencies', Column:'from/to', Notes:'Task ids. Finish→Start only.' },
+      { Sheet:'Dependencies', Column:'critical',Notes:'TRUE draws arrow in red (critical path)' },
+
+      { Sheet:'RAID', Column:'kind', Notes:'risk | assumption | issue | dependency' },
+      { Sheet:'RAID', Column:'sev',  Notes:'high | med | low' },
+      { Sheet:'RAID', Column:'status', Notes:'open | progress | mitigated | closed | accepted. Open/progress items past their target date are auto-flagged as overdue.' },
+
+      { Sheet:'Tracker', Column:'status', Notes:'done | progress | open' },
+      { Sheet:'Tracker', Column:'pct',    Notes:'0–100' },
+      { Sheet:'Tracker', Column:'risk',   Notes:'TRUE flags at risk (amber pill)' },
+      { Sheet:'Tracker', Column:'overdue',Notes:'Auto-computed from due date vs today and pct < 100. Stored value kept for Excel compatibility but ignored on display.' },
+
+      { Sheet:'KPI_Summary', Column:'barColor', Notes:'blank | g (green) | r (red)' }
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(readme, { header:['Sheet','Column','Notes'] }), 'README');
+
+    const date = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `Modernization_Planner_${date}.xlsx`);
+    toast('Workbook exported successfully', 'success');
+  } catch (err){
+    console.error(err);
+    toast('Export failed: ' + err.message, 'error');
+  }
+}
+
+/* ============================================================
+   POWERPOINT SUMMARY SLIDE EXPORT
+   ============================================================ */
+function quarterLabel(v){
+  const idx = Math.min(11, Math.max(0, Math.floor(+v)));
+  const fy = 2025 + Math.floor(idx / 4);
+  const q = (idx % 4) + 1;
+  return `FY${String(fy).slice(2)}-Q${q}`;
+}
+
+function exportSummarySlide(){
+  if (typeof PptxGenJS === 'undefined'){
+    toast('PowerPoint library not loaded — check your internet connection', 'error');
+    return;
+  }
+  try {
+    const pres = new PptxGenJS();
+    pres.layout = 'LAYOUT_WIDE'; // 13.33 x 7.5 in
+    pres.title = 'Modernization Program Executive Summary';
+    pres.company = 'Program Management Office';
+
+    const slide = pres.addSlide();
+    slide.background = { color:'FAF8F3' };
+
+    // Palette (hex without #)
+    const NAVY='061530', NAVY2='0A1F44', NAVY3='13294B';
+    const GOLD='C9A961', GOLDL='D9BF7D';
+    const INK='1B1F2A', INK3='6B7280', LINE='E4DFD2', PAPER2='F2EEE3';
+    const RED='C84B31', AMBER='D4A437', GREEN='4A7C59';
+
+    /* ---------- Header bar ---------- */
+    slide.addShape('rect', { x:0, y:0, w:13.33, h:0.7, fill:{color:NAVY}, line:{type:'none'} });
+    slide.addShape('rect', { x:0, y:0.68, w:13.33, h:0.04, fill:{color:GOLD}, line:{type:'none'} });
+
+    // Crest
+    slide.addShape('ellipse', { x:0.36, y:0.17, w:0.36, h:0.36, fill:{color:GOLD}, line:{color:GOLDL, width:1} });
+    slide.addText('M', {
+      x:0.36, y:0.17, w:0.36, h:0.36,
+      fontFace:'Georgia', fontSize:14, bold:true, color:NAVY,
+      align:'center', valign:'middle'
+    });
+
+    slide.addText('PROGRAM CONTROL TOWER · FY25–FY27', {
+      x:0.86, y:0.09, w:8, h:0.2,
+      fontFace:'Calibri', fontSize:8, bold:true, color:GOLDL, charSpacing:3
+    });
+    slide.addText('Mainframe Modernization · Executive Summary', {
+      x:0.86, y:0.26, w:8, h:0.38,
+      fontFace:'Georgia', fontSize:18, color:'FFFFFF'
+    });
+
+    const today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    slide.addText([
+      { text:'Reporting Period: ', options:{ color:GOLDL, bold:true } },
+      { text:'Q2 FY26',            options:{ color:'FFFFFF' } },
+      { text:'   |   ',            options:{ color:GOLD } },
+      { text:'Generated: ',        options:{ color:GOLDL, bold:true } },
+      { text:today,                options:{ color:'FFFFFF' } }
+    ], { x:7.8, y:0.23, w:5.3, h:0.25, fontFace:'Calibri', fontSize:9, align:'right', valign:'middle' });
+
+    /* ---------- KPI cards ---------- */
+    const cardY=0.95, cardH=1.15, cardW=3.0, gapX=0.13, startX=0.4;
+    kpiSummary.slice(0, 4).forEach((k, i) => {
+      const x = startX + i*(cardW + gapX);
+      slide.addShape('rect', { x, y:cardY, w:cardW, h:cardH, fill:{color:'FFFFFF'}, line:{color:LINE, width:0.5} });
+      slide.addShape('rect', { x, y:cardY, w:0.05, h:cardH, fill:{color:GOLD}, line:{type:'none'} });
+
+      slide.addText(String(k.label||'').toUpperCase(), {
+        x:x+0.22, y:cardY+0.10, w:cardW-0.32, h:0.22,
+        fontFace:'Calibri', fontSize:8, bold:true, color:INK3, charSpacing:2
+      });
+      slide.addText(String(k.value ?? ''), {
+        x:x+0.22, y:cardY+0.27, w:cardW-0.32, h:0.55,
+        fontFace:'Georgia', fontSize:28, color:NAVY
+      });
+
+      // Progress bar
+      const barX=x+0.22, barY=cardY+0.80, barW=cardW-0.44;
+      slide.addShape('rect', { x:barX, y:barY, w:barW, h:0.08, fill:{color:PAPER2}, line:{type:'none'} });
+      const fillRatio = Math.max(0, Math.min(100, +k.barPct||0)) / 100;
+      const fillColor = k.barColor==='g' ? GREEN : k.barColor==='r' ? RED : GOLD;
+      if (fillRatio > 0){
+        slide.addShape('rect', { x:barX, y:barY, w:barW*fillRatio, h:0.08, fill:{color:fillColor}, line:{type:'none'} });
+      }
+      slide.addText(k.note||'', {
+        x:x+0.22, y:cardY+0.90, w:cardW-0.32, h:0.22,
+        fontFace:'Calibri', fontSize:8, color:INK3
+      });
+    });
+
+    /* ---------- Two columns of factor sections ---------- */
+    const topY = 2.35;
+    const botY = topY + 2.35 + 0.10;
+    const colLX = 0.4, colRX = 6.86, colW = 6.08;
+    const ROWH = 0.21;
+
+    const addSectionHeader = (label, x, y, w) => {
+      slide.addShape('rect', { x, y, w, h:0.32, fill:{color:NAVY}, line:{type:'none'} });
+      slide.addShape('rect', { x, y:y+0.30, w, h:0.02, fill:{color:GOLD}, line:{type:'none'} });
+      slide.addText(String(label).toUpperCase(), {
+        x:x+0.18, y, w:w-0.36, h:0.32,
+        fontFace:'Calibri', fontSize:10, bold:true, color:'FFFFFF', charSpacing:3, valign:'middle'
+      });
+    };
+    const clip = (s, n) => {
+      s = String(s || '');
+      return s.length > n ? s.slice(0, n-1) + '…' : s;
+    };
+
+    // TOP-LEFT: Workstream Health
+    addSectionHeader('Workstream Health', colLX, topY, colW);
+    let yy = topY + 0.42;
+    workstreams.forEach(ws => {
+      const color = ws.health === 'green' ? GREEN : ws.health === 'amber' ? AMBER : RED;
+      slide.addShape('ellipse', { x:colLX+0.20, y:yy+0.065, w:0.11, h:0.11, fill:{color}, line:{type:'none'} });
+      slide.addText(ws.name || '', {
+        x:colLX+0.42, y:yy, w:colW-1.80, h:ROWH,
+        fontFace:'Calibri', fontSize:10, color:INK, valign:'middle'
+      });
+      slide.addText(ws.owner || '', {
+        x:colLX+colW-1.38, y:yy, w:1.22, h:ROWH,
+        fontFace:'Georgia', italic:true, fontSize:9, color:NAVY3, valign:'middle', align:'right'
+      });
+      yy += ROWH;
+    });
+
+    // BOT-LEFT: Upcoming Milestones
+    addSectionHeader('Upcoming Milestones', colLX, botY, colW);
+    yy = botY + 0.42;
+    const msList = tasks.filter(t => t.milestone && !t.hit)
+      .sort((a,b) => (+a.at||0) - (+b.at||0))
+      .slice(0, 6);
+    if (msList.length === 0){
+      slide.addText('All milestones to date have been hit.', {
+        x:colLX+0.2, y:yy, w:colW-0.4, h:0.3,
+        fontFace:'Calibri', fontSize:10, italic:true, color:INK3
+      });
+    } else {
+      msList.forEach(m => {
+        slide.addShape('diamond', {
+          x:colLX+0.17, y:yy+0.055, w:0.14, h:0.12,
+          fill:{color:NAVY2}, line:{color:GOLD, width:1}
+        });
+        slide.addText(`${m.id} — ${m.name}`, {
+          x:colLX+0.42, y:yy, w:colW-1.55, h:ROWH,
+          fontFace:'Calibri', fontSize:10, color:INK, valign:'middle'
+        });
+        slide.addText(quarterLabel(+m.at||0), {
+          x:colLX+colW-1.10, y:yy, w:0.95, h:ROWH,
+          fontFace:'Georgia', italic:true, fontSize:9, color:NAVY3, valign:'middle', align:'right'
+        });
+        yy += ROWH;
+      });
+    }
+
+    // TOP-RIGHT: Top Open Risks & Issues
+    addSectionHeader('Top Open Risks & Issues', colRX, topY, colW);
+    yy = topY + 0.42;
+    const isOpen = r => r.status === 'open' || r.status === 'progress';
+    const risks = [
+      ...raid.filter(r => r.sev === 'high' && isOpen(r)),
+      ...raid.filter(r => r.sev === 'med'  && isOpen(r))
+    ].slice(0, 7);
+    if (risks.length === 0){
+      slide.addText('No open high/medium-severity items.', {
+        x:colRX+0.2, y:yy, w:colW-0.4, h:0.3,
+        fontFace:'Calibri', fontSize:10, italic:true, color:INK3
+      });
+    } else {
+      risks.forEach(r => {
+        const sevColor = r.sev === 'high' ? RED : r.sev === 'med' ? AMBER : GREEN;
+        slide.addShape('roundRect', {
+          x:colRX+0.17, y:yy+0.035, w:0.52, h:0.15,
+          fill:{color:sevColor}, line:{type:'none'}, rectRadius:0.03
+        });
+        slide.addText((r.sev||'').toUpperCase(), {
+          x:colRX+0.17, y:yy+0.035, w:0.52, h:0.15,
+          fontFace:'Calibri', fontSize:7, bold:true, color:'FFFFFF',
+          align:'center', valign:'middle', charSpacing:2
+        });
+        slide.addText(r.id || '', {
+          x:colRX+0.74, y:yy, w:0.62, h:ROWH,
+          fontFace:'Georgia', italic:true, fontSize:9, color:NAVY3, valign:'middle'
+        });
+        slide.addText(clip(r.title, 60), {
+          x:colRX+1.36, y:yy, w:colW-1.50, h:ROWH,
+          fontFace:'Calibri', fontSize:10, color:INK, valign:'middle'
+        });
+        yy += ROWH;
+      });
+    }
+
+    // BOT-RIGHT: Critical Deliverables
+    addSectionHeader('Critical Deliverables (In-Flight)', colRX, botY, colW);
+    yy = botY + 0.42;
+    const delPriority = [
+      ...tracker.filter(t => t.overdue),
+      ...tracker.filter(t => t.risk && !t.overdue),
+      ...tracker.filter(t => !t.risk && !t.overdue && t.status === 'progress')
+        .sort((a,b) => (+b.pct||0) - (+a.pct||0))
+    ].slice(0, 7);
+    delPriority.forEach(d => {
+      slide.addText(d.id || '', {
+        x:colRX+0.17, y:yy, w:0.55, h:ROWH,
+        fontFace:'Georgia', italic:true, fontSize:9, color:NAVY3, valign:'middle'
+      });
+      slide.addText(clip(d.name, 36), {
+        x:colRX+0.72, y:yy, w:colW-2.55, h:ROWH,
+        fontFace:'Calibri', fontSize:10, color:INK, valign:'middle'
+      });
+      const pct = +d.pct || 0;
+      const barX = colRX + colW - 1.70;
+      const pBarY = yy + 0.085;
+      const barFullW = 1.25;
+      slide.addShape('rect', { x:barX, y:pBarY, w:barFullW, h:0.06, fill:{color:PAPER2}, line:{type:'none'} });
+      let barCol = GOLD;
+      if (d.overdue) barCol = RED;
+      else if (d.risk) barCol = AMBER;
+      else if (pct === 100) barCol = GREEN;
+      if (pct > 0){
+        slide.addShape('rect', { x:barX, y:pBarY, w:barFullW*(pct/100), h:0.06, fill:{color:barCol}, line:{type:'none'} });
+      }
+      slide.addText(pct + '%', {
+        x:colRX+colW-0.40, y:yy, w:0.33, h:ROWH,
+        fontFace:'Georgia', italic:true, fontSize:9, color:NAVY3, valign:'middle', align:'right'
+      });
+      yy += ROWH;
+    });
+
+    /* ---------- Footer ---------- */
+    slide.addShape('rect', { x:0, y:7.25, w:13.33, h:0.25, fill:{color:NAVY}, line:{type:'none'} });
+    slide.addText([
+      { text:String(workstreams.length), options:{ color:GOLD, bold:true } },
+      { text:' workstreams  ·  ',         options:{ color:GOLDL } },
+      { text:String(tasks.filter(t=>!t.milestone).length), options:{ color:GOLD, bold:true } },
+      { text:' tasks  ·  ',               options:{ color:GOLDL } },
+      { text:String(raid.length),         options:{ color:GOLD, bold:true } },
+      { text:' RAID items  ·  ',          options:{ color:GOLDL } },
+      { text:String(tracker.length),      options:{ color:GOLD, bold:true } },
+      { text:' tracked deliverables',     options:{ color:GOLDL } }
+    ], {
+      x:0.4, y:7.25, w:9, h:0.25,
+      fontFace:'Calibri', fontSize:8, charSpacing:1, valign:'middle'
+    });
+    slide.addText('© Program Management Office', {
+      x:9, y:7.25, w:4, h:0.25,
+      fontFace:'Calibri', fontSize:8, color:GOLDL, align:'right', valign:'middle', charSpacing:1
+    });
+
+    const dateTag = new Date().toISOString().slice(0,10);
+    pres.writeFile({ fileName:`Modernization_Executive_Summary_${dateTag}.pptx` });
+    toast('Executive summary slide exported', 'success');
+  } catch (err){
+    console.error(err);
+    toast('Summary export failed: ' + err.message, 'error');
+  }
+}
+
+/* ============================================================
+   EXCEL IMPORT
+   ============================================================ */
+const toBool = v => {
+  if (v === true || v === 1) return true;
+  if (v === false || v === 0 || v === null || v === undefined || v === '') return false;
+  const s = String(v).trim().toLowerCase();
+  return s === 'true' || s === 'yes' || s === 'y' || s === '1' || s === 'x';
+};
+const toNum = v => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return isNaN(n) ? null : n;
+};
+
+function importFromExcel(file){
+  if (typeof XLSX === 'undefined'){
+    toast('Excel library not loaded — check your internet connection', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const getSheet = name => wb.Sheets[name]
+        ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:null})
+        : null;
+
+      const updated = [];
+
+      const wsData = getSheet('Workstreams');
+      if (wsData && wsData.length){
+        workstreams = wsData.map(w => ({
+          id: String(w.id || '').trim(),
+          name: w.name || '',
+          theme: w.theme || 't-foundation',
+          owner: w.owner || '',
+          health: (w.health || 'green').toLowerCase()
+        })).filter(w => w.id);
+        updated.push('Workstreams');
+      }
+
+      const taskData = getSheet('Tasks');
+      if (taskData && taskData.length){
+        tasks = taskData.map(t => {
+          const isMs = toBool(t.milestone);
+          const obj = {
+            id: String(t.id || '').trim(),
+            wsId: String(t.wsId || '').trim(),
+            name: t.name || '',
+            progress: toNum(t.progress) ?? 0
+          };
+          if (isMs){
+            obj.milestone = true;
+            // Prefer milestoneDate (new primary column); fall back to atDate, then at (fraction)
+            if (t.milestoneDate) obj.atDate = normalizeDate(t.milestoneDate);
+            else if (t.atDate) obj.atDate = normalizeDate(t.atDate);
+            else if (t.at != null && t.at !== '') obj.at = toNum(t.at) ?? 0;
+            if (toBool(t.hit)) obj.hit = true;
+            if (t.parentId) obj.parentId = String(t.parentId).trim();
+          } else {
+            // Prefer startDate/endDate; fall back to start/end
+            if (t.startDate) obj.startDate = normalizeDate(t.startDate);
+            else if (t.start != null && t.start !== '') obj.start = toNum(t.start) ?? 0;
+            if (t.endDate) obj.endDate = normalizeDate(t.endDate);
+            else if (t.end != null && t.end !== '') obj.end = toNum(t.end) ?? 0;
+            if (toBool(t.atRisk))  obj.atRisk = true;
+            if (toBool(t.delayed)) obj.delayed = true;
+            if (t.parentId) obj.parentId = String(t.parentId).trim();
+          }
+          return obj;
+        }).filter(t => t.id && t.wsId);
+        updated.push('Tasks');
+      }
+
+      const depData = getSheet('Dependencies');
+      if (depData && depData.length){
+        dependencies = [];
+        criticalPairs = new Set();
+        depData.forEach(d => {
+          const f = String(d.from || '').trim();
+          const t = String(d.to || '').trim();
+          if (!f || !t) return;
+          dependencies.push([f, t]);
+          if (toBool(d.critical)) criticalPairs.add(`${f}-${t}`);
+        });
+        updated.push('Dependencies');
+      }
+
+      const raidData = getSheet('RAID');
+      if (raidData && raidData.length){
+        raid = raidData.map(r => ({
+          id: String(r.id || '').trim(),
+          kind: (r.kind || 'risk').toLowerCase(),
+          title: r.title || '',
+          ws: r.ws || '',
+          sev: (r.sev || 'med').toLowerCase(),
+          owner: r.owner || '',
+          ownerName: r.ownerName || '',
+          status: (r.status || 'open').toLowerCase(),
+          date: normalizeDate(r.date),
+          desc: r.desc || ''
+        })).filter(r => r.id);
+        updated.push('RAID');
+      }
+
+      const trackerData = getSheet('Tracker');
+      if (trackerData && trackerData.length){
+        tracker = trackerData.map(t => ({
+          id: String(t.id || '').trim(),
+          name: t.name || '',
+          ws: t.ws || '',
+          owner: t.owner || '',
+          ownerName: t.ownerName || '',
+          status: (t.status || 'open').toLowerCase(),
+          pct: toNum(t.pct) ?? 0,
+          due: normalizeDate(t.due),
+          risk: toBool(t.risk),
+          overdue: toBool(t.overdue)
+        })).filter(t => t.id);
+        updated.push('Tracker');
+      }
+
+      const sumData = getSheet('KPI_Summary');
+      if (sumData && sumData.length){
+        kpiSummary = sumData.map(k => ({
+          metric: k.metric || '',
+          label: k.label || '',
+          value: k.value ?? '',
+          barPct: toNum(k.barPct) ?? 0,
+          barColor: k.barColor || '',
+          note: k.note || ''
+        }));
+        updated.push('KPI Summary');
+      }
+
+      const tlData = getSheet('KPI_Timeline');
+      if (tlData && tlData.length){
+        kpiTimeline = tlData.map(r => ({
+          month: r.month || '',
+          planned: toNum(r.planned),
+          actual: toNum(r.actual)
+        }));
+        updated.push('KPI Timeline');
+      }
+
+      const effortData = getSheet('KPI_Effort');
+      if (effortData && effortData.length){
+        kpiEffort = effortData.map(r => ({
+          workstream: r.workstream || '',
+          percent: toNum(r.percent) ?? 0
+        }));
+        updated.push('KPI Effort');
+      }
+
+      const raidBd = getSheet('KPI_RAID_Breakdown');
+      if (raidBd && raidBd.length){
+        kpiRaidBreakdown = raidBd.map(r => ({
+          type: r.type || '',
+          open: toNum(r.open) ?? 0,
+          mitigated: toNum(r.mitigated) ?? 0,
+          accepted: toNum(r.accepted) ?? 0,
+          closed: toNum(r.closed) ?? 0
+        }));
+        updated.push('KPI RAID');
+      }
+
+      const velData = getSheet('KPI_Velocity');
+      if (velData && velData.length){
+        kpiVelocity = velData.map(r => ({
+          month: r.month || '',
+          closed: toNum(r.closed) ?? 0,
+          opened: toNum(r.opened) ?? 0
+        }));
+        updated.push('KPI Velocity');
+      }
+
+      if (updated.length === 0){
+        toast('No recognized sheets found in workbook', 'error');
+        return;
+      }
+
+      // Re-render everything
+      renderGantt();
+      renderRaid();
+      renderTracker();
+      renderKpiSummary();
+      renderKpiCharts();
+
+      toast(`Imported ${updated.length} sheet${updated.length===1?'':'s'}: ${updated.join(', ')}`, 'success', 5000);
+    } catch (err){
+      console.error(err);
+      toast('Import failed: ' + err.message, 'error', 5000);
+    }
+  };
+  reader.onerror = () => toast('Could not read file', 'error');
+  reader.readAsArrayBuffer(file);
+}
+
+// Excel may deliver dates as serial numbers or ISO strings
+function normalizeDate(v){
+  if (v === null || v === undefined || v === '') return '';
+  if (typeof v === 'number'){
+    // Excel serial date → JS
+    const d = XLSX.SSF ? XLSX.SSF.parse_date_code(v) : null;
+    if (d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  }
+  if (v instanceof Date){
+    return v.toISOString().slice(0,10);
+  }
+  const s = String(v).trim();
+  // Already ISO?
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  return s;
+}
+
+/* ============================================================
+   EXECUTIVE ONE-PAGER SLIDE EXPORT
+   ============================================================ */
+function exportToSlide(){
+  if (typeof PptxGenJS === 'undefined'){
+    toast('Slide library not loaded — check your internet connection', 'error');
+    return;
+  }
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE';   // 13.333" x 7.5"
+    pptx.title  = 'Modernization — Executive One-Pager';
+    pptx.author = 'Program Management Office';
+
+    const W = 13.333, H = 7.5, PAD = 0.3;
+    const COL = {
+      navy:'1E40AF', navyDark:'1E3A8A', navyMid:'2563EB',
+      gold:'F59E0B', goldDeep:'D97706', goldSoft:'FBBF24',
+      paper:'F8FAFC', paper2:'F1F5F9',
+      ink:'0F172A', ink2:'334155', ink3:'64748B',
+      line:'E2E8F0',
+      red:'EF4444', amber:'F59E0B', green:'10B981'
+    };
+
+    const slide = pptx.addSlide();
+    slide.background = { color: COL.paper };
+
+    /* --- Title bar --- */
+    slide.addShape(pptx.ShapeType.rect, {
+      x:0, y:0, w:W, h:0.85,
+      fill:{color:COL.navyDark}, line:{color:COL.navyDark}
+    });
+    slide.addText('PROGRAM CONTROL TOWER · FY25–FY27', {
+      x:PAD, y:0.1, w:8, h:0.22,
+      fontSize:9, color:COL.goldSoft, bold:true, charSpacing:6, fontFace:'Calibri'
+    });
+    slide.addText('Mainframe Modernization · Executive One-Pager', {
+      x:PAD, y:0.3, w:10, h:0.5,
+      fontSize:22, color:'FFFFFF', fontFace:'Georgia'
+    });
+    slide.addText([
+      { text:'●  ', options:{ color:COL.gold, bold:true } },
+      { text:'On Track', options:{ color:'FFFFFF', bold:true } },
+      { text:'     Q2 FY26', options:{ color:'FFFFFF' } }
+    ], {
+      x:W-4.5, y:0.32, w:4.2, h:0.4,
+      fontSize:12, align:'right', valign:'middle', fontFace:'Calibri'
+    });
+
+    /* --- Gold separator --- */
+    slide.addShape(pptx.ShapeType.rect, {
+      x:0, y:0.85, w:W, h:0.04,
+      fill:{color:COL.gold}, line:{color:COL.gold}
+    });
+
+    /* --- KPI cards --- */
+    const kpiY = 1.05, kpiH = 1.05;
+    const cards = (kpiSummary || []).slice(0, 4);
+    const kpiCount = Math.max(cards.length, 1);
+    const kpiGap = 0.15;
+    const kpiAvail = W - PAD*2;
+    const kpiW = (kpiAvail - kpiGap*(kpiCount-1)) / kpiCount;
+
+    cards.forEach((k, i) => {
+      const x = PAD + i*(kpiW + kpiGap);
+      slide.addShape(pptx.ShapeType.rect, {
+        x, y:kpiY, w:kpiW, h:kpiH,
+        fill:{color:'FFFFFF'}, line:{color:COL.line, width:0.75}
+      });
+      slide.addShape(pptx.ShapeType.rect, {
+        x, y:kpiY, w:0.08, h:kpiH,
+        fill:{color:COL.gold}, line:{color:COL.gold}
+      });
+      slide.addText(String(k.label || '').toUpperCase(), {
+        x:x+0.2, y:kpiY+0.08, w:kpiW-0.3, h:0.22,
+        fontSize:8.5, color:COL.ink3, bold:true, charSpacing:4, fontFace:'Calibri'
+      });
+      slide.addText(String(k.value ?? ''), {
+        x:x+0.2, y:kpiY+0.26, w:kpiW-0.3, h:0.5,
+        fontSize:26, color:COL.navyDark, fontFace:'Georgia', valign:'middle'
+      });
+      slide.addText(String(k.note || ''), {
+        x:x+0.2, y:kpiY+0.78, w:kpiW-0.3, h:0.22,
+        fontSize:8.5, color:COL.ink3, fontFace:'Calibri'
+      });
+    });
+
+    /* --- Helper: draw a bordered card with gold tab + title --- */
+    function drawCard(x, y, w, h, title){
+      slide.addShape(pptx.ShapeType.rect, {
+        x, y, w, h,
+        fill:{color:'FFFFFF'}, line:{color:COL.line, width:0.75}
+      });
+      slide.addShape(pptx.ShapeType.rect, {
+        x, y, w:0.7, h:0.04,
+        fill:{color:COL.gold}, line:{color:COL.gold}
+      });
+      slide.addText(title, {
+        x:x+0.2, y:y+0.1, w:w-0.4, h:0.25,
+        fontSize:10, color:COL.goldDeep, bold:true, charSpacing:5, fontFace:'Calibri'
+      });
+      slide.addShape(pptx.ShapeType.rect, {
+        x:x+0.2, y:y+0.4, w:w-0.4, h:0.008,
+        fill:{color:COL.line}, line:{color:COL.line}
+      });
+    }
+
+    /* --- Middle row: Workstream Health + Top RAID --- */
+    const midY = 2.3, midH = 2.45;
+    const halfW = (W - PAD*2 - 0.2) / 2;
+    const leftX = PAD;
+    const rightX = PAD + halfW + 0.2;
+
+    drawCard(leftX, midY, halfW, midH, 'WORKSTREAM HEALTH');
+    const wsList = workstreams || [];
+    const wsRowH = (midH - 0.55) / Math.max(wsList.length, 1);
+    wsList.forEach((ws, i) => {
+      const rowY = midY + 0.5 + i*wsRowH;
+      slide.addText(ws.name || '', {
+        x:leftX+0.2, y:rowY, w:halfW-2.1, h:wsRowH,
+        fontSize:11, color:COL.ink, valign:'middle', fontFace:'Calibri'
+      });
+      slide.addText(ws.owner || '', {
+        x:leftX+halfW-1.9, y:rowY, w:1.4, h:wsRowH,
+        fontSize:10, color:COL.navyMid, italic:true, fontFace:'Georgia', align:'right', valign:'middle'
+      });
+      const hc = ws.health === 'green' ? COL.green : ws.health === 'amber' ? COL.amber : COL.red;
+      slide.addShape(pptx.ShapeType.ellipse, {
+        x:leftX+halfW-0.35, y:rowY+wsRowH/2-0.09, w:0.18, h:0.18,
+        fill:{color:hc}, line:{color:'FFFFFF', width:1.5}
+      });
+    });
+
+    drawCard(rightX, midY, halfW, midH, 'TOP RISKS & ISSUES');
+    // Prioritize high-sev open/progress, then fill with other open/progress
+    let topRaid = (raid || [])
+      .filter(r => r.sev === 'high' && (r.status === 'open' || r.status === 'progress'))
+      .slice(0, 4);
+    if (topRaid.length < 4){
+      const extra = (raid || [])
+        .filter(r => !topRaid.includes(r) && (r.status === 'open' || r.status === 'progress'))
+        .slice(0, 4 - topRaid.length);
+      topRaid = topRaid.concat(extra);
+    }
+    if (topRaid.length === 0){
+      slide.addText('No open risks or issues at this time.', {
+        x:rightX+0.2, y:midY+1, w:halfW-0.4, h:0.4,
+        fontSize:11, color:COL.ink3, italic:true, align:'center'
+      });
+    } else {
+      const rRowH = (midH - 0.55) / topRaid.length;
+      topRaid.forEach((r, i) => {
+        const rowY = midY + 0.5 + i*rRowH;
+        const sevColor = r.sev === 'high' ? COL.red : r.sev === 'med' ? COL.amber : COL.green;
+        slide.addShape(pptx.ShapeType.rect, {
+          x:rightX+0.2, y:rowY+0.06, w:0.52, h:0.22,
+          fill:{color:sevColor}, line:{color:sevColor}
+        });
+        slide.addText(String(r.sev || '').toUpperCase(), {
+          x:rightX+0.2, y:rowY+0.06, w:0.52, h:0.22,
+          fontSize:8, color:'FFFFFF', bold:true, align:'center', valign:'middle',
+          charSpacing:2, fontFace:'Calibri'
+        });
+        slide.addText(r.title || '', {
+          x:rightX+0.8, y:rowY, w:halfW-1.05, h:rRowH*0.5,
+          fontSize:10.5, color:COL.ink, bold:true, fontFace:'Calibri'
+        });
+        const metaBits = [r.ws, r.ownerName, r.date].filter(Boolean).join('  ·  ');
+        slide.addText(metaBits, {
+          x:rightX+0.8, y:rowY+rRowH*0.48, w:halfW-1.05, h:rRowH*0.45,
+          fontSize:9, color:COL.ink3, fontFace:'Calibri'
+        });
+      });
+    }
+
+    /* --- Bottom row: Upcoming Milestones + Delivery Status --- */
+    const botY = 4.9, botH = 2.25;
+
+    drawCard(leftX, botY, halfW, botH, 'UPCOMING MILESTONES');
+    const today = computeTodayFrac();
+    const upcoming = (tasks || [])
+      .filter(t => t.milestone && taskAt(t) >= today)
+      .sort((a,b) => taskAt(a) - taskAt(b))
+      .slice(0, 4);
+
+    if (upcoming.length === 0){
+      slide.addText('No milestones scheduled ahead.', {
+        x:leftX+0.2, y:botY+1, w:halfW-0.4, h:0.4,
+        fontSize:11, color:COL.ink3, italic:true, align:'center'
+      });
+    } else {
+      const msRowH = (botH - 0.55) / upcoming.length;
+      upcoming.forEach((ms, i) => {
+        const rowY = botY + 0.5 + i*msRowH;
+        slide.addShape(pptx.ShapeType.diamond, {
+          x:leftX+0.22, y:rowY+msRowH/2-0.11, w:0.22, h:0.22,
+          fill:{color:COL.navy}, line:{color:COL.gold, width:1.5}
+        });
+        slide.addText(ms.name || '', {
+          x:leftX+0.55, y:rowY, w:halfW-2, h:msRowH,
+          fontSize:11, color:COL.ink, bold:true, valign:'middle', fontFace:'Calibri'
+        });
+        // If task has an atDate, format it as "Mon D, YYYY"; else derive from at fraction
+        let label;
+        if (ms.atDate){
+          const dt = new Date(ms.atDate);
+          if (!isNaN(dt.getTime())){
+            const MONTHS_FULL_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            label = `${MONTHS_FULL_SHORT[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`;
+          } else {
+            label = `${MONTHS_SHORT[Math.min(Math.max(Math.floor(+taskAt(ms)),0),11)]} ${PROGRAM_YEAR}`;
+          }
+        } else {
+          const mIdx = Math.min(Math.max(Math.floor(+taskAt(ms)), 0), 11);
+          label = `${MONTHS_SHORT[mIdx]} ${PROGRAM_YEAR}`;
+        }
+        slide.addText(label, {
+          x:leftX+halfW-1.45, y:rowY, w:1.25, h:msRowH,
+          fontSize:10.5, color:COL.goldDeep, italic:true, fontFace:'Georgia',
+          align:'right', valign:'middle'
+        });
+      });
+    }
+
+    drawCard(rightX, botY, halfW, botH, 'DELIVERY STATUS');
+    const total   = (tracker || []).length;
+    const done    = (tracker || []).filter(t => +t.pct === 100).length;
+    const prog    = (tracker || []).filter(t => t.status === 'progress').length;
+    const overdue = (tracker || []).filter(t => t.overdue).length;
+
+    const stats = [
+      { label:'TOTAL',       value:total,   color:COL.navyMid },
+      { label:'COMPLETE',    value:done,    color:COL.green },
+      { label:'IN PROGRESS', value:prog,    color:COL.amber },
+      { label:'OVERDUE',     value:overdue, color:COL.red }
+    ];
+    const statY = botY + 0.55;
+    const statW = (halfW - 0.4) / 4;
+    stats.forEach((s, i) => {
+      const sx = rightX + 0.2 + i*statW;
+      slide.addText(String(s.value), {
+        x:sx, y:statY, w:statW, h:0.55,
+        fontSize:28, color:s.color, fontFace:'Georgia', align:'center'
+      });
+      slide.addText(s.label, {
+        x:sx, y:statY+0.58, w:statW, h:0.22,
+        fontSize:8.5, color:COL.ink3, bold:true, charSpacing:3,
+        align:'center', fontFace:'Calibri'
+      });
+    });
+
+    // RAID snapshot strip
+    const raidOpen = (raid || []).filter(r => r.status === 'open').length;
+    const raidProg = (raid || []).filter(r => r.status === 'progress').length;
+    const raidMit  = (raid || []).filter(r => r.status === 'mitigated').length;
+    const raidCls  = (raid || []).filter(r => r.status === 'closed' || r.status === 'accepted').length;
+
+    slide.addText('RAID SNAPSHOT', {
+      x:rightX+0.2, y:botY+1.5, w:halfW-0.4, h:0.22,
+      fontSize:9, color:COL.goldDeep, bold:true, charSpacing:5, fontFace:'Calibri'
+    });
+    slide.addText([
+      { text:String(raidOpen), options:{ bold:true, color:COL.red,   fontSize:15 } },
+      { text:' OPEN     ',     options:{ color:COL.ink3, fontSize:10 } },
+      { text:String(raidProg), options:{ bold:true, color:COL.amber, fontSize:15 } },
+      { text:' IN PROG     ',  options:{ color:COL.ink3, fontSize:10 } },
+      { text:String(raidMit),  options:{ bold:true, color:COL.green, fontSize:15 } },
+      { text:' MITIGATED     ',options:{ color:COL.ink3, fontSize:10 } },
+      { text:String(raidCls),  options:{ bold:true, color:COL.navyMid, fontSize:15 } },
+      { text:' CLOSED',        options:{ color:COL.ink3, fontSize:10 } }
+    ], {
+      x:rightX+0.2, y:botY+1.72, w:halfW-0.4, h:0.4,
+      fontFace:'Calibri', valign:'middle'
+    });
+
+    /* --- Footer --- */
+    slide.addShape(pptx.ShapeType.rect, {
+      x:0, y:H-0.3, w:W, h:0.3,
+      fill:{color:COL.paper2}, line:{color:COL.paper2}
+    });
+    const genDate = new Date().toLocaleDateString(undefined, {
+      year:'numeric', month:'long', day:'numeric'
+    });
+    slide.addText(
+      `© FY26 Program Management Office  ·  Generated ${genDate}  ·  Data source: Modernization Control Tower`,
+      {
+        x:PAD, y:H-0.28, w:W-PAD*2, h:0.25,
+        fontSize:8.5, color:COL.ink3, align:'center', fontFace:'Calibri'
+      }
+    );
+
+    const iso = new Date().toISOString().slice(0,10);
+    pptx.writeFile({ fileName: `Modernization_Executive_OnePager_${iso}.pptx` });
+    toast('Executive one-pager exported', 'success');
+  } catch (err){
+    console.error(err);
+    toast('Slide export failed: ' + err.message, 'error', 5000);
+  }
+}
+
+/* ============================================================
+   LINE-ITEM EDITING — drawer-based editor for every entity
+   ============================================================ */
+
+const editorSchemas = {
+  workstream: {
+    kicker: 'Program Structure',
+    titleNew: 'New Workstream',
+    getLabel: w => w.name || w.id,
+    fields: [
+      { field:'id',     label:'ID', type:'text', required:true },
+      { field:'name',   label:'Name', type:'text', required:true },
+      { field:'owner',  label:'Owner', type:'text' },
+      { field:'health', label:'Health', type:'select', options:['green','amber','red'] }
+    ]
+  },
+  task: {
+    kicker: 'Roadmap · Schedule',
+    titleNew: 'New Task',
+    getLabel: t => `${t.id} · ${t.name}`,
+    note: 'Enter real dates for start, end, or milestone. Dates before Jan 1, 2026 clamp to the start of the chart; dates after Dec 31, 2026 clamp to the end. Bars turn red automatically when overdue.',
+    fields: [
+      { field:'id',        label:'Task ID', type:'text', required:true },
+      { field:'wsId',      label:'Workstream', type:'ws-select', required:true },
+      { field:'name',      label:'Task Name', type:'text', required:true },
+      { field:'milestone', label:'This is a milestone (diamond)', type:'checkbox', reactive:true },
+      { field:'__summary_note__', type:'info',
+        text:'This task has subtasks. Its dates and progress are rolled up automatically from its subtasks and cannot be edited here. Edit the subtasks to change the rollup.',
+        showIf:t => !t.milestone && tasks.some(x => !x.milestone && x.parentId === t.id) },
+      { field:'startDate', label:'Start Date', type:'date',
+        showIf:t => !t.milestone && !tasks.some(x => !x.milestone && x.parentId === t.id) },
+      { field:'endDate',   label:'End Date',   type:'date',
+        showIf:t => !t.milestone && !tasks.some(x => !x.milestone && x.parentId === t.id) },
+      { field:'progress',  label:'Progress %', type:'number', min:0, max:100,
+        showIf:t => !t.milestone && !tasks.some(x => !x.milestone && x.parentId === t.id) },
+      { field:'parentId',  label:'Attach as subtask of (optional)', type:'task-select',
+        showIf:t => !t.milestone && !tasks.some(x => !x.milestone && x.parentId === t.id) },
+      { field:'atDate',    label:'Milestone Date', type:'date', showIf:t => t.milestone },
+      { field:'parentId',  label:'Attach to parent task (optional)', type:'task-select', showIf:t => t.milestone },
+      { field:'hit',       label:'Milestone has been hit (green diamond)', type:'checkbox', showIf:t => t.milestone },
+      { field:'atRisk',    label:'Flag: At Risk (red outline)',      type:'checkbox', showIf:t => !t.milestone },
+      { field:'delayed',   label:'Flag: Delayed (amber dashed)',     type:'checkbox', showIf:t => !t.milestone }
+    ]
+  },
+  raid: {
+    kicker: 'Risk · Assumption · Issue · Dependency',
+    titleNew: 'New RAID Item',
+    getLabel: r => `${r.id} · ${r.title || r.kind}`,
+    fields: [
+      { field:'id',        label:'ID',          type:'text', required:true },
+      { field:'kind',      label:'Type',        type:'select', options:['risk','assumption','issue','dependency'] },
+      { field:'title',     label:'Title',       type:'text', required:true },
+      { field:'desc',      label:'Description', type:'textarea' },
+      { field:'ws',        label:'Workstream',  type:'text' },
+      { field:'sev',       label:'Severity',    type:'select', options:['high','med','low'] },
+      { field:'owner',     label:'Owner Initials', type:'text' },
+      { field:'ownerName', label:'Owner Full Name', type:'text' },
+      { field:'status',    label:'Status',      type:'select', options:['open','progress','mitigated','closed','accepted'] },
+      { field:'date',      label:'Target Date', type:'date' }
+    ]
+  },
+  tracker: {
+    kicker: 'Delivery Tracker',
+    titleNew: 'New Deliverable',
+    getLabel: t => `${t.id} · ${t.name}`,
+    note: 'Overdue is computed automatically from due date vs today and % complete.',
+    fields: [
+      { field:'id',        label:'ID',          type:'text', required:true },
+      { field:'name',      label:'Deliverable Name', type:'text', required:true },
+      { field:'ws',        label:'Workstream',  type:'text' },
+      { field:'owner',     label:'Owner Initials', type:'text' },
+      { field:'ownerName', label:'Owner Full Name', type:'text' },
+      { field:'status',    label:'Status', type:'select', options:['done','progress','open'] },
+      { field:'pct',       label:'Progress %', type:'number', min:0, max:100 },
+      { field:'due',       label:'Due Date', type:'date' },
+      { field:'risk',      label:'Flag: At Risk', type:'checkbox' }
+    ]
+  }
+};
+
+const drawerState = { entity:null, mode:null, item:null, originalItem:null };
+
+function getEntityArray(entity){
+  return { workstream:workstreams, task:tasks, raid:raid, tracker:tracker }[entity];
+}
+
+function getNewItemDefaults(entity){
+  const today = new Date().toISOString().slice(0,10);
+  const in30 = new Date(Date.now() + 30*86400*1000).toISOString().slice(0,10);
+  switch (entity){
+    case 'workstream':
+      return { id:'ws'+(workstreams.length+1), name:'New Workstream', owner:'', health:'green' };
+    case 'task':
+      return { id:'T-'+Date.now().toString().slice(-4), wsId:(workstreams[0]?.id || 'ws1'),
+               name:'New Task', startDate:today, endDate:in30, progress:0, milestone:false };
+    case 'raid':
+      return { id:'X-'+Date.now().toString().slice(-3), kind:'risk', title:'New Item',
+               ws:'', sev:'med', owner:'', ownerName:'', status:'open', date:today, desc:'' };
+    case 'tracker':
+      return { id:'D-'+Date.now().toString().slice(-3), name:'New Deliverable',
+               ws:'', owner:'', ownerName:'', status:'open', pct:0, due:today, risk:false };
+  }
+  return {};
+}
+
+function escAttr(s){ return String(s ?? '').replace(/"/g, '&quot;') }
+
+function renderDrawerField(f, item){
+  if (f.showIf && !f.showIf(item)) return '';
+
+  // Read-only informational panel (not a real input)
+  if (f.type === 'info'){
+    return `<div class="drawer-info-note">${esc(f.text || '')}</div>`;
+  }
+
+  const val = item[f.field];
+  const req = f.required ? ' required' : '';
+
+  if (f.type === 'checkbox'){
+    return `<div class="drawer-field"><label class="checkbox-wrap">
+      <input type="checkbox" data-field="${f.field}"${val ? ' checked' : ''}/>
+      <span>${esc(f.label)}</span>
+    </label></div>`;
+  }
+
+  let control;
+  switch (f.type){
+    case 'text':
+      control = `<input type="text" data-field="${f.field}" value="${escAttr(val ?? '')}"${req}/>`;
+      break;
+    case 'textarea':
+      control = `<textarea data-field="${f.field}"${req}>${esc(val ?? '')}</textarea>`;
+      break;
+    case 'number': {
+      const stepAttr = f.step != null ? ` step="${f.step}"` : '';
+      const minAttr  = f.min  != null ? ` min="${f.min}"`   : '';
+      const maxAttr  = f.max  != null ? ` max="${f.max}"`   : '';
+      control = `<input type="number" data-field="${f.field}" value="${escAttr(val ?? '')}"${req}${minAttr}${maxAttr}${stepAttr}/>`;
+      break;
+    }
+    case 'date':
+      control = `<input type="date" data-field="${f.field}" value="${escAttr(val ?? '')}"${req}/>`;
+      break;
+    case 'select':
+      control = `<select data-field="${f.field}">${
+        f.options.map(o => `<option value="${escAttr(o)}"${o === val ? ' selected' : ''}>${esc(o)}</option>`).join('')
+      }</select>`;
+      break;
+    case 'ws-select':
+      control = `<select data-field="${f.field}">${
+        workstreams.map(w => `<option value="${escAttr(w.id)}"${w.id === val ? ' selected' : ''}>${esc(w.id)} · ${esc(w.name)}</option>`).join('')
+      }</select>`;
+      break;
+    case 'task-select': {
+      // Parent candidates: non-milestones in the same workstream, not self,
+      // and not a descendant of self (prevents circular nesting).
+      // Allow up to one level of subtask nesting (parent can be top-level OR a subtask, but not a grandchild).
+      const currentWs = item.wsId;
+      const selfId    = item.id;
+      // Compute descendants of self to exclude
+      const descendantIds = new Set();
+      const addDesc = (pid) => {
+        tasks.forEach(t => {
+          if (t.parentId === pid && !descendantIds.has(t.id)){
+            descendantIds.add(t.id);
+            addDesc(t.id);
+          }
+        });
+      };
+      if (selfId) addDesc(selfId);
+
+      // Depth helper: 0 = top-level, 1 = subtask, 2 = grandchild
+      const depthOf = (t) => {
+        let d = 0, cur = t;
+        while (cur.parentId){
+          const p = tasks.find(x => x.id === cur.parentId);
+          if (!p) break;
+          d++; cur = p;
+          if (d > 5) break;
+        }
+        return d;
+      };
+
+      const options = tasks.filter(t =>
+        !t.milestone &&
+        t.wsId === currentWs &&
+        t.id !== selfId &&
+        !descendantIds.has(t.id) &&
+        depthOf(t) <= 1   // eligible parent must be top-level or a subtask (max depth 1)
+      );
+      const emptyLabel = options.length === 0
+        ? '— no eligible parent tasks in this workstream —'
+        : (item.milestone ? '— standalone milestone —' : '— top-level task —');
+      control = `<select data-field="${f.field}">
+        <option value=""${!val ? ' selected' : ''}>${emptyLabel}</option>
+        ${options.map(t => {
+          const depth = depthOf(t);
+          const indent = depth > 0 ? '  '.repeat(depth) + '└ ' : '';
+          return `<option value="${escAttr(t.id)}"${t.id === val ? ' selected' : ''}>${indent}${esc(t.id)} · ${esc(t.name)}</option>`;
+        }).join('')}
+      </select>`;
+      break;
+    }
+  }
+  return `<div class="drawer-field"><label>${esc(f.label)}</label>${control}</div>`;
+}
+
+function renderDrawerForm(){
+  const schema = editorSchemas[drawerState.entity];
+  const item = drawerState.item;
+  const body = document.getElementById('drawerBody');
+
+  body.innerHTML = schema.fields.map(f => renderDrawerField(f, item)).join('');
+
+  // Reactive fields — re-render when toggled (e.g. milestone checkbox hides/shows fields)
+  schema.fields.forEach(f => {
+    if (!f.reactive) return;
+    const el = body.querySelector(`[data-field="${f.field}"]`);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      readFormIntoItem();
+      // Auto-populate sensible defaults when milestone toggles
+      if (drawerState.entity === 'task'){
+        if (drawerState.item.milestone){
+          // Switched to milestone — ensure atDate exists
+          if (!drawerState.item.atDate){
+            // Midpoint of start/end if available
+            const s = drawerState.item.startDate ? dateToFrac(drawerState.item.startDate) : (+drawerState.item.start || 0);
+            const e = drawerState.item.endDate   ? dateToFrac(drawerState.item.endDate)   : (+drawerState.item.end   || 1);
+            const midFrac = (s + e) / 2;
+            drawerState.item.atDate = fracToDate(midFrac);
+          }
+          if (drawerState.item.hit == null) drawerState.item.hit = false;
+          if (drawerState.item.parentId == null) drawerState.item.parentId = '';
+        } else {
+          // Switched to task — ensure startDate and endDate exist
+          if (!drawerState.item.startDate){
+            const f = drawerState.item.atDate ? dateToFrac(drawerState.item.atDate) : (+drawerState.item.at || 0);
+            drawerState.item.startDate = fracToDate(f);
+          }
+          if (!drawerState.item.endDate){
+            const sF = dateToFrac(drawerState.item.startDate) || 0;
+            drawerState.item.endDate = fracToDate(Math.min(12, sF + 1));
+          }
+          if (drawerState.item.progress == null) drawerState.item.progress = 0;
+          if (drawerState.item.parentId == null) drawerState.item.parentId = '';
+        }
+      }
+      renderDrawerForm();
+    });
+  });
+}
+
+function readFormIntoItem(){
+  const schema = editorSchemas[drawerState.entity];
+  const body = document.getElementById('drawerBody');
+  schema.fields.forEach(f => {
+    if (f.type === 'info') return;
+    const el = body.querySelector(`[data-field="${f.field}"]`);
+    if (!el) return;
+    let value;
+    if (f.type === 'checkbox') value = el.checked;
+    else if (f.type === 'number') value = el.value === '' ? null : +el.value;
+    else value = el.value;
+    drawerState.item[f.field] = value;
+  });
+}
+
+function openDrawer(entity, itemOrNull, mode){
+  const schema = editorSchemas[entity];
+  if (!schema) return;
+
+  drawerState.entity = entity;
+  drawerState.mode = mode;
+
+  if (mode === 'new'){
+    drawerState.item = getNewItemDefaults(entity);
+    drawerState.originalItem = null;
+  } else {
+    drawerState.item = itemOrNull;
+    drawerState.originalItem = JSON.parse(JSON.stringify(itemOrNull));
+  }
+
+  // Backfill date fields for tasks if only fraction fields are set (legacy data)
+  if (entity === 'task'){
+    const it = drawerState.item;
+    if (it.milestone){
+      if (!it.atDate && it.at != null) it.atDate = fracToDate(+it.at);
+    } else {
+      if (!it.startDate && it.start != null) it.startDate = fracToDate(+it.start);
+      if (!it.endDate   && it.end   != null) it.endDate   = fracToDate(+it.end);
+    }
+  }
+
+  document.getElementById('drawerKicker').textContent =
+    schema.kicker + ' · ' + (mode === 'new' ? 'New' : 'Edit');
+  document.getElementById('drawerTitle').textContent =
+    mode === 'new' ? schema.titleNew : schema.getLabel(drawerState.item);
+
+  document.getElementById('drawerDelete').style.display = mode === 'edit' ? '' : 'none';
+
+  const noteEl = document.getElementById('drawerNote');
+  if (schema.note){
+    noteEl.textContent = schema.note;
+    noteEl.style.display = '';
+  } else {
+    noteEl.style.display = 'none';
+  }
+
+  renderDrawerForm();
+
+  const overlay = document.getElementById('drawerOverlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  // Focus first input
+  setTimeout(() => {
+    const first = document.querySelector('#drawerBody input, #drawerBody select, #drawerBody textarea');
+    if (first) first.focus();
+  }, 200);
+}
+
+function closeDrawer(){
+  // For edit mode + cancel, revert to original
+  if (drawerState.mode === 'edit' && drawerState.originalItem){
+    Object.keys(drawerState.item).forEach(k => delete drawerState.item[k]);
+    Object.assign(drawerState.item, drawerState.originalItem);
+  }
+  const overlay = document.getElementById('drawerOverlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  drawerState.entity = null;
+  drawerState.item = null;
+  drawerState.originalItem = null;
+}
+
+function saveDrawer(){
+  readFormIntoItem();
+
+  const schema = editorSchemas[drawerState.entity];
+  for (const f of schema.fields){
+    if (!f.required) continue;
+    if (f.showIf && !f.showIf(drawerState.item)) continue;
+    const v = drawerState.item[f.field];
+    if (v == null || v === ''){
+      toast(`"${f.label}" is required`, 'error');
+      return;
+    }
+  }
+
+  // For tasks: if a date field is set, clear the stale numeric fraction equivalent
+  // so downstream views use the authoritative date value.
+  if (drawerState.entity === 'task'){
+    const it = drawerState.item;
+    if (it.milestone){
+      if (it.atDate) delete it.at;
+      delete it.startDate; delete it.endDate; delete it.start; delete it.end; delete it.progress;
+    } else {
+      if (it.startDate) delete it.start;
+      if (it.endDate)   delete it.end;
+      delete it.atDate; delete it.at; delete it.hit;
+    }
+  }
+
+  // ID uniqueness check (for 'new' mode or if ID changed)
+  const arr = getEntityArray(drawerState.entity);
+  if (drawerState.mode === 'new'){
+    if (arr.some(x => x.id === drawerState.item.id)){
+      toast(`ID "${drawerState.item.id}" already exists`, 'error');
+      return;
+    }
+    arr.push(drawerState.item);
+  }
+  // Edit mode: item is already the array reference; readFormIntoItem updated it in place
+  drawerState.originalItem = null; // prevent cancel-revert on close
+
+  // Re-render affected views
+  const entity = drawerState.entity;
+  if (entity === 'workstream' || entity === 'task') renderGantt();
+  if (entity === 'raid') renderRaid();
+  if (entity === 'tracker') renderTracker();
+
+  toast(drawerState.mode === 'new' ? 'Item added' : 'Changes saved', 'success');
+  closeDrawer();
+}
+
+function deleteDrawerItem(){
+  if (drawerState.mode !== 'edit') return;
+  const label = editorSchemas[drawerState.entity].getLabel(drawerState.item);
+  if (!confirm(`Delete "${label}"? This cannot be undone.`)) return;
+
+  const arr = getEntityArray(drawerState.entity);
+  const idx = arr.indexOf(drawerState.item);
+  if (idx >= 0) arr.splice(idx, 1);
+
+  // Clean up related data when deleting
+  if (drawerState.entity === 'task'){
+    const tid = drawerState.item.id;
+    dependencies = dependencies.filter(([f,to]) => f !== tid && to !== tid);
+    // Remove any critical pairs involving this task
+    const toRemove = [];
+    criticalPairs.forEach(k => { if (k.startsWith(tid+'-') || k.endsWith('-'+tid)) toRemove.push(k); });
+    toRemove.forEach(k => criticalPairs.delete(k));
+  }
+  if (drawerState.entity === 'workstream'){
+    // Reassign or remove tasks in that workstream? Just warn if any.
+    const wsid = drawerState.item.id;
+    const orphans = tasks.filter(t => t.wsId === wsid).length;
+    if (orphans > 0){
+      toast(`${orphans} task(s) are now unassigned. Reassign them via edit.`, 'error', 5000);
+    }
+  }
+
+  drawerState.originalItem = null; // prevent revert
+
+  const entity = drawerState.entity;
+  if (entity === 'workstream' || entity === 'task') renderGantt();
+  if (entity === 'raid') renderRaid();
+  if (entity === 'tracker') renderTracker();
+
+  toast('Item deleted', 'success');
+  closeDrawer();
+}
+
+/* Wire drawer controls */
+document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+document.getElementById('drawerCancel').addEventListener('click', closeDrawer);
+document.getElementById('drawerSave').addEventListener('click', saveDrawer);
+document.getElementById('drawerDelete').addEventListener('click', deleteDrawerItem);
+document.getElementById('drawerOverlay').addEventListener('click', e => {
+  if (e.target.id === 'drawerOverlay') closeDrawer();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('drawerOverlay').classList.contains('open')){
+    closeDrawer();
+  }
+});
+
+/* Table edit button delegation */
+document.getElementById('raidTable').addEventListener('click', e => {
+  const btn = e.target.closest('.row-btn');
+  if (!btn) return;
+  const tr = btn.closest('tr');
+  const item = raid.find(r => r.id === tr.dataset.id);
+  if (item) openDrawer('raid', item, 'edit');
+});
+document.getElementById('trackerTable').addEventListener('click', e => {
+  const btn = e.target.closest('.row-btn');
+  if (!btn) return;
+  const tr = btn.closest('tr');
+  const item = tracker.find(t => t.id === tr.dataset.id);
+  if (item) openDrawer('tracker', item, 'edit');
+});
+
+/* Gantt click delegation — labels, bars, milestones */
+document.getElementById('gantt').addEventListener('click', e => {
+  // Collapse-toggle chevrons — intercept first so they don't open the drawer
+  const toggle = e.target.closest('.collapse-toggle');
+  if (toggle){
+    e.stopPropagation();
+    const wsKey = toggle.dataset.toggleWs;
+    const tKey  = toggle.dataset.toggleTask;
+    if (wsKey){
+      if (collapsedWs.has(wsKey)) collapsedWs.delete(wsKey);
+      else collapsedWs.add(wsKey);
+    } else if (tKey){
+      if (collapsedTask.has(tKey)) collapsedTask.delete(tKey);
+      else collapsedTask.add(tKey);
+    }
+    renderGantt();
+    return;
+  }
+
+  const target = e.target.closest('.g-lbl, .task, .milestone');
+  if (!target) return;
+  if (target.classList.contains('g-label-head')) return;
+
+  const taskId = target.dataset.taskId;
+  const wsId = target.dataset.wsId;
+
+  if (wsId){
+    const w = workstreams.find(x => x.id === wsId);
+    if (w) openDrawer('workstream', w, 'edit');
+  } else if (taskId){
+    const t = tasks.find(x => x.id === taskId);
+    if (t) openDrawer('task', t, 'edit');
+  }
+});
+
+/* Inject "+ New" buttons into each section toolbar */
+const newBtnSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+function injectNewButton(tabId, label, entity){
+  const rhs = document.querySelector(`#${tabId} .section-head .rhs`);
+  if (!rhs) return;
+  const btn = document.createElement('button');
+  btn.className = 'btn edit-new';
+  btn.innerHTML = `${newBtnSvg} ${label}`;
+  btn.addEventListener('click', () => openDrawer(entity, null, 'new'));
+  rhs.insertBefore(btn, rhs.firstChild);
+}
+
+injectNewButton('roadmap', '+ Task', 'task');
+injectNewButton('roadmap', '+ Workstream', 'workstream');
+injectNewButton('raid',    '+ RAID Item', 'raid');
+injectNewButton('tracker', '+ Deliverable', 'tracker');
+
+// Dedicated "+ Milestone" button that opens the task drawer pre-configured as a milestone
+function openNewMilestone(){
+  const today = new Date().toISOString().slice(0,10);
+  const item = {
+    id: 'M-' + Date.now().toString().slice(-4),
+    wsId: (workstreams[0]?.id || 'ws1'),
+    name: 'New Milestone',
+    milestone: true,
+    atDate: today,
+    hit: false,
+    parentId: ''
+  };
+  openDrawer('task', item, 'new');
+}
+
+// Dedicated "+ Subtask" button that opens the task drawer with a parent selector prefilled
+function openNewSubtask(){
+  const today = new Date().toISOString().slice(0,10);
+  const in14 = new Date(Date.now() + 14*86400*1000).toISOString().slice(0,10);
+  const firstParent = tasks.find(t => !t.milestone && !t.parentId);
+  const item = {
+    id: 'ST-' + Date.now().toString().slice(-4),
+    wsId: (firstParent?.wsId || workstreams[0]?.id || 'ws1'),
+    name: 'New Subtask',
+    milestone: false,
+    startDate: today,
+    endDate: in14,
+    progress: 0,
+    parentId: firstParent?.id || ''
+  };
+  openDrawer('task', item, 'new');
+}
+(function injectMilestoneButton(){
+  const rhs = document.querySelector('#roadmap .section-head .rhs');
+  if (!rhs) return;
+  const msBtn = document.createElement('button');
+  msBtn.className = 'btn edit-new';
+  msBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2L22 12 12 22 2 12 12 2z"/></svg> + Milestone`;
+  msBtn.title = 'Add a milestone (attach to an existing task or standalone)';
+  msBtn.addEventListener('click', openNewMilestone);
+
+  const subBtn = document.createElement('button');
+  subBtn.className = 'btn edit-new';
+  subBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 6 4 14 10 14"/><rect x="10" y="10" width="10" height="8" rx="1.5"/></svg> + Subtask`;
+  subBtn.title = 'Add a subtask that nests under a parent task';
+  subBtn.addEventListener('click', openNewSubtask);
+
+  // Place next to "+ Task" in order: Subtask, Milestone
+  const taskBtn = Array.from(rhs.children).find(c => c.textContent && c.textContent.trim() === '+ Task');
+  if (taskBtn && taskBtn.nextSibling){
+    rhs.insertBefore(subBtn, taskBtn.nextSibling);
+    rhs.insertBefore(msBtn, subBtn.nextSibling);
+  } else if (taskBtn){
+    rhs.appendChild(subBtn);
+    rhs.appendChild(msBtn);
+  } else {
+    rhs.insertBefore(msBtn, rhs.firstChild);
+    rhs.insertBefore(subBtn, rhs.firstChild);
+  }
+
+  // Collapse All / Expand All buttons (positioned before the "+ New" buttons)
+  const collapseAll = document.createElement('button');
+  collapseAll.className = 'btn';
+  collapseAll.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"/></svg> Collapse All`;
+  collapseAll.title = 'Collapse all workstreams and parent tasks';
+  collapseAll.addEventListener('click', () => {
+    workstreams.forEach(w => collapsedWs.add(w.id));
+    tasks.forEach(t => {
+      if (!t.milestone && tasks.some(x => x.parentId === t.id && !x.milestone)){
+        collapsedTask.add(t.id);
+      }
+    });
+    renderGantt();
+  });
+
+  const expandAll = document.createElement('button');
+  expandAll.className = 'btn';
+  expandAll.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg> Expand All`;
+  expandAll.title = 'Expand all workstreams and parent tasks';
+  expandAll.addEventListener('click', () => {
+    collapsedWs.clear();
+    collapsedTask.clear();
+    renderGantt();
+  });
+
+  rhs.insertBefore(expandAll, rhs.firstChild);
+  rhs.insertBefore(collapseAll, rhs.firstChild);
+})();
+
+/* ============================================================
+   LIVE PROGRAM CLOCK
+   ============================================================ */
+const CLOCK_TARGET = new Date(PROGRAM_YEAR, 11, 31, 23, 59, 59); // Dec 31, end of day
+
+function computeClockStats(now){
+  const msPerDay  = 1000*60*60*24;
+  const msPerHour = 1000*60*60;
+
+  if (now >= CLOCK_TARGET){
+    return { workingDays:0, workingHours:0, calendarDays:0, calendarWeeks:0, isPast:true };
+  }
+
+  const msDiff = CLOCK_TARGET - now;
+  const calendarDays  = Math.ceil(msDiff / msPerDay);
+  const calendarWeeks = Math.ceil(calendarDays / 7);
+
+  // Count Mon–Fri from tomorrow through target day
+  let workingDays = 0;
+  const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  cursor.setDate(cursor.getDate() + 1);
+  const stop = new Date(CLOCK_TARGET.getFullYear(), CLOCK_TARGET.getMonth(), CLOCK_TARGET.getDate());
+  while (cursor <= stop){
+    const day = cursor.getDay();
+    if (day >= 1 && day <= 5) workingDays++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  const workingHours = workingDays * 8;
+  return { workingDays, workingHours, calendarDays, calendarWeeks, isPast:false };
+}
+
+let __lastClockDay = null;
+let __cachedStats  = null;
+
+// Granular time remaining (recomputed every second)
+function computeTimeRemaining(now){
+  const ms = CLOCK_TARGET - now;
+  if (ms <= 0) return { d:0, h:0, m:0, s:0, isPast:true };
+  const totalS = Math.floor(ms / 1000);
+  const d = Math.floor(totalS / 86400);
+  const h = Math.floor((totalS % 86400) / 3600);
+  const m = Math.floor((totalS % 3600) / 60);
+  const s = totalS % 60;
+  return { d, h, m, s, isPast:false };
+}
+
+function updateProgramClock(){
+  const now = new Date();
+
+  // Date & time display — updates every second
+  const dateStr = now.toLocaleDateString(undefined, {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+  const timeStr = now.toLocaleTimeString(undefined, {
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  });
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('cdDate', dateStr);
+  set('cdTime', timeStr);
+
+  // Live D:H:M:S ticker — updates every second
+  const rem = computeTimeRemaining(now);
+  set('cdTickerD', String(rem.d).padStart(3, '0'));
+  set('cdTickerH', String(rem.h).padStart(2, '0'));
+  set('cdTickerM', String(rem.m).padStart(2, '0'));
+  set('cdTickerS', String(rem.s).padStart(2, '0'));
+
+  // Topbar chip — compact "Nd HHh MMm SSs" format, visible on every tab
+  const tbr = document.getElementById('topbarRemaining');
+  if (tbr){
+    if (rem.isPast){
+      tbr.textContent = 'Program complete';
+    } else {
+      tbr.textContent =
+        `${rem.d}d ${String(rem.h).padStart(2,'0')}h ${String(rem.m).padStart(2,'0')}m ${String(rem.s).padStart(2,'0')}s`;
+    }
+  }
+
+  // Business stats — recompute only when the calendar day rolls over
+  const dayKey = now.toDateString();
+  if (dayKey !== __lastClockDay){
+    __lastClockDay = dayKey;
+    __cachedStats  = computeClockStats(now);
+  }
+  const s = __cachedStats;
+  if (s.isPast){
+    set('cdWorkDays',  '0');
+    set('cdWorkHours', '0');
+    set('cdCalDays',   '0');
+    set('cdCalWeeks',  '0');
+  } else {
+    set('cdWorkDays',  s.workingDays.toLocaleString());
+    set('cdWorkHours', s.workingHours.toLocaleString());
+    set('cdCalDays',   s.calendarDays.toLocaleString());
+    set('cdCalWeeks',  s.calendarWeeks.toLocaleString());
+  }
+}
+updateProgramClock();
+setInterval(updateProgramClock, 1000);
+
+/* ============================================================
+   BUTTON WIRING
+   ============================================================ */
+document.querySelectorAll('[data-action="summary"]').forEach(btn => {
+  btn.addEventListener('click', exportSummarySlide);
+});
+document.querySelectorAll('[data-action="export"]').forEach(btn => {
+  btn.addEventListener('click', exportToExcel);
+});
+const fileInput = document.getElementById('fileInput');
+document.querySelectorAll('[data-action="import"]').forEach(btn => {
+  btn.addEventListener('click', () => fileInput.click());
+});
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) importFromExcel(f);
+  e.target.value = ''; // allow re-import of same file
+});
+
+// Inject "Export Slide" button into every section toolbar
+const slideBtnMarkup = `
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="3" y="5" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="2"/>
+    <path d="M7 10h10M7 14h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  Export Slide`;
+document.querySelectorAll('.section-head .rhs').forEach(rhs => {
+  const btn = document.createElement('button');
+  btn.className = 'btn slide filled';
+  btn.setAttribute('data-action', 'export-slide');
+  btn.innerHTML = slideBtnMarkup;
+  btn.addEventListener('click', exportToSlide);
+  rhs.appendChild(btn);
+});
+
+/* ============================================================
+   INITIAL RENDER
+   ============================================================ */
+renderGantt();
+renderRaid();
+renderTracker();
+renderKpiSummary();
+window.addEventListener('load', () => setTimeout(renderKpiCharts, 60));
+</script>
+</body>
+</html>
