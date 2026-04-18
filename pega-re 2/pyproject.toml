@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pegare"
+version = "1.0.0"
+description = "Intelligent Pega Reverse Engineering - Natural language interface for analyzing Pega applications"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Claude", email = "claude@anthropic.com"},
+]
+maintainers = [
+    {name = "Claude", email = "claude@anthropic.com"},
+]
+keywords = ["pega", "reverse-engineering", "documentation", "analysis", "modernization"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Topic :: Software Development :: Documentation", 
+    "Topic :: Software Development :: Reverse Engineering",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9", 
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "lxml>=4.9.0",
+    "networkx>=3.0",
+]
+
+[project.optional-dependencies]
+langgraph = [
+    "langgraph>=0.0.40",
+    "langchain-core>=0.1.0",
+]
+analysis = [
+    "pandas>=2.0.0",
+    "jupyter>=1.0.0", 
+    "plotly>=5.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+all = [
+    "langgraph>=0.0.40",
+    "langchain-core>=0.1.0",
+    "pandas>=2.0.0",
+    "jupyter>=1.0.0",
+    "plotly>=5.0.0",
+]
+
+[project.scripts]
+pegare = "pega_re.auto_dispatcher:main"
+pegare-analyze = "pega_re.cli:analyze_command"
+pegare-validate = "pega_re.cli:validate_command"
+
+[project.urls]
+Homepage = "https://github.com/your-org/pegare"
+Repository = "https://github.com/your-org/pegare"
+Documentation = "https://github.com/your-org/pegare/blob/main/README.md"
+"Bug Reports" = "https://github.com/your-org/pegare/issues"
+
+[tool.setuptools]
+packages = ["pega_re"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+pega_re = [
+    "skills/*/*.md",
+    "templates/*.html",
+    "templates/*.css",
+]
+
+[tool.black]
+line-length = 120
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"

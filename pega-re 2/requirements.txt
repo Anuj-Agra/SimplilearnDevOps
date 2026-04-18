@@ -1,0 +1,16 @@
+# Core dependencies (required)
+lxml>=4.9.0
+networkx>=3.0
+
+# Build dependencies (for package creation)
+build>=0.10.0
+setuptools>=45
+wheel
+
+# Optional dependencies (install with pip install "pegare[extra]")
+# langgraph>=0.0.40      # pip install "pegare[langgraph]"  
+# langchain-core>=0.1.0  # pip install "pegare[langgraph]"
+# pandas>=2.0.0          # pip install "pegare[analysis]"
+# jupyter>=1.0.0         # pip install "pegare[analysis]"
+# plotly>=5.0.0          # pip install "pegare[analysis]"
+

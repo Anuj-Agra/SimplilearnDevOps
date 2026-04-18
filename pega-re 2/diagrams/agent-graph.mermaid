@@ -1,0 +1,20 @@
+graph TD
+    START([Start: 4 JARs + manifests]) --> EXT[ExtractorAgent<br/>Unpack JARs<br/>Read pega.xml manifests<br/>Build file catalog]
+    EXT --> PARSE[RuleParserAgent<br/>Stream XML<br/>Classify by pxObjClass<br/>Write to SQLite catalog]
+
+    PARSE --> HM[HierarchyMapperAgent<br/>Ruleset → Class → Property<br/>Inheritance chain<br/>Access roles]
+    PARSE --> FA[FlowAnalyzerAgent<br/>Case Types → Stages → Steps<br/>Flow shapes & transitions<br/>Decision tables/trees]
+    PARSE --> UI[UIRendererAgent<br/>Sections & Harnesses<br/>Layout reconstruction<br/>→ standalone HTML]
+
+    FA --> TX[TaskExtractorAgent<br/>Assignments & Routers<br/>SLAs & Escalations<br/>Task generation ledger]
+
+    HM --> SYN[DocSynthesizerAgent<br/>Program Documentation<br/>Hierarchy + Flows +<br/>Tasks + UI Index]
+    TX --> SYN
+    UI --> SYN
+
+    SYN --> OUT([Outputs:<br/>program_doc.md<br/>program_doc.html<br/>ui/*.html<br/>catalog.sqlite])
+
+    classDef agent fill:#1e3a5f,stroke:#0a1929,color:#fff
+    classDef io fill:#d4a017,stroke:#8b6914,color:#000
+    class EXT,PARSE,HM,FA,UI,TX,SYN agent
+    class START,OUT io

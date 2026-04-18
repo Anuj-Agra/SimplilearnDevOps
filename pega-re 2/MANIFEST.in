@@ -1,0 +1,39 @@
+# Include documentation files
+include README.md
+include INSTALL.md
+include QUICK_REFERENCE.md
+include EXTRACTED_JARS_GUIDE.md
+include ARCHITECTURE.md
+include LICENSE
+include requirements.txt
+
+# Include skill files (the agent prompts)
+recursive-include skills *.md
+
+# Include examples  
+recursive-include examples *.py
+
+# Include diagrams
+recursive-include diagrams *.mermaid
+
+# Include any templates or static files
+recursive-include pega_re/templates *.html *.css *.js
+
+# Exclude development/build files
+exclude setup.py
+exclude pyproject.toml
+exclude .gitignore
+exclude .python-version
+exclude *.pyc
+exclude *.pyo
+exclude *.pyd
+exclude __pycache__
+exclude .pytest_cache
+exclude .mypy_cache
+exclude build
+exclude dist
+exclude *.egg-info
+
+# Exclude test files if any
+recursive-exclude tests *
+exclude test_*.py
