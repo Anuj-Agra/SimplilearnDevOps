@@ -1,0 +1,8 @@
+{
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "chat.promptFiles": true,
+  "chat.useCustomizationsInParentRepositories": true,
+  "openapiSync.javaRepoPath": "../my-java-service",
+  "openapiSync.angularRepoPath": "../my-angular-app",
+  "task.allowAutomaticTasks": "on"
+}

@@ -1,0 +1,13 @@
+{
+  "folders": [
+    { "name": "🔗 cross-repo", "path": "." },
+    { "name": "☕ java-service", "path": "../my-java-service" },
+    { "name": "🅰️ angular-app", "path": "../my-angular-app" }
+  ],
+  "settings": {
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "chat.promptFiles": true,
+    "chat.useCustomizationsInParentRepositories": true,
+    "task.allowAutomaticTasks": "on"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "OpenSpec: Watch for Cross-Repo Changes",
+      "type": "shell",
+      "command": "node",
+      "args": ["scripts/watch-sync.mjs", "--java", "${config:openapiSync.javaRepoPath}", "--angular", "${config:openapiSync.angularRepoPath}"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "showReuseMessage": false, "clear": true },
+      "runOptions": { "runOn": "folderOpen" },
+      "group": "build"
+    },
+    {
+      "label": "OpenSpec: Watch (custom paths)",
+      "type": "shell",
+      "command": "node",
+      "args": ["scripts/watch-sync.mjs", "--java", "${input:javaRepoPath}", "--angular", "${input:angularRepoPath}"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    }
+  ],
+  "inputs": [
+    { "id": "javaRepoPath", "description": "Path to the Java service repo", "default": "../my-java-service", "type": "promptString" },
+    { "id": "angularRepoPath", "description": "Path to the Angular app repo", "default": "../my-angular-app", "type": "promptString" }
+  ]
+}
